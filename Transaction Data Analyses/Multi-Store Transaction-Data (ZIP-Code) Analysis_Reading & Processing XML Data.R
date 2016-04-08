@@ -406,15 +406,27 @@ Trans <- subset(Trans, !duplicated(Date), Date) %>%
              IsZIP,
              ZIPComp)
 
-# 6) Export whole transaction data set #################################################################################
+# 6) Import transaction data set from past weeks #######################################################################
 
-save.image("~/Projects/Transaction Data Analysis/2 DP/Transaction Data Analysis Workspace.RData")
-
-# Bind (row-wise) current week with past weeks and save
 setwd("~/Projects/Transaction Data Analysis/3 PD/0 Transaction Data/All Stores & Recent Weeks")
-Trans <- rbind( Trans,
-               readRDS("Daily Transactions_All Stores_Recent Weeks.rds"))
-        saveRDS(Trans, "Daily Transactions_All Stores_Recent Weeks.rds")
+#Trans_Past  <- readRDS("Daily Transactions_All Stores_Recent Weeks.rds")
+
+setwd("~/Projects/Transaction Data Analysis/3 PD/1 ZIP-Code Analysis")
+Trans_Past  <- read.csv("Daily Transactions_All Stores_Recent 10 Weeks_2016-01-20 - 2016-03-29 (ZIP Codes).csv") %>% 
+      mutate(ID         = factor(ID),
+             StoreNo    = factor(StoreNo),
+             Date       = as.Date(Date),
+             Week       = factor(Week),
+             CashNo     = factor(CashNo),
+            #CashName   = CashName,
+             ZIPCash    = factor(ZIPCash), 
+            #IsZIPCash  = IsZIPCash,
+             ZIPCust    = factor(ZIPCust),
+            #IsZIPCust  = IsZIPCust,
+             ZIP        = factor(ZIP),
+            #IsZIP      = factor(IsZIP),
+            #ZIPComp    = ZIPComp,
+             TotalSales = as.numeric(TotalSales))
 
 # 7) Read and process CSV ad-distribution data #########################################################################
 # Contains household counts per store per ZIP code that ad is distributed to weekly
@@ -445,6 +457,11 @@ select(Trans, ID,
        ZIP,     IsZIP,
        ZIPComp,
        TotalSales) %>% 
-      write.csv(paste0("Daily Transactions_All Stores_Recent ", length(unique(Trans$Week)), " Weeks_",
+      rbind(Trans_Past) %>% 
+      write.csv(paste0("Daily Transactions_All Stores_",
+                       #length(unique(Trans$Week)),
+                       #" Weeks_",
                        min(Trans$Date), " - ", max(Trans$Date),
                        " (ZIP Codes).csv"), row.names = F)
+
+saveRDS(Trans, "Daily Transactions_All Stores_Recent Weeks.rds")
