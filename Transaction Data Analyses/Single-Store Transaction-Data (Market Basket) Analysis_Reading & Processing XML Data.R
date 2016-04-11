@@ -27,7 +27,7 @@ options(stringsAsFactors = FALSE)
 ## Organize information in a file index (dataframe)
 
 # Determine (store) input folders that contain XML files and list them
-setwd("~/Projects/Transaction Data Analysis/1 RD/XML Transaction Files")
+setwd("~/Projects/Transaction Data Analyses/1 RD/XML Transaction Files")
 Stores            <- as.character(sort(as.numeric(list.files())))
        StoreList  <- list()
 length(StoreList) <- length(Stores)
@@ -35,7 +35,7 @@ names( StoreList) <-        Stores
 
 # Loop through each folder and read the file name-- not the file (content) itself
 for (j in 1:length(Stores)) {
-      StoreFolder       <- paste0("~/Projects/Transaction Data Analysis/1 RD/XML Transaction Files/", Stores[j])
+      StoreFolder       <- paste0("~/Projects/Transaction Data Analyses/1 RD/XML Transaction Files/", Stores[j])
       setwd(StoreFolder)
       FileNames         <- list.files()
       
@@ -129,7 +129,7 @@ FileList_ItemAttr             <- list()
 length(FileList_ItemAttr)     <- length(files_selected)
 
 # Set file folder to read from
-StoreFolder  <- paste0("~/Projects/Transaction Data Analysis/1 RD/XML Transaction Files/", store)
+StoreFolder  <- paste0("~/Projects/Transaction Data Analyses/1 RD/XML Transaction Files/", store)
 setwd(StoreFolder)
 
 # +++++ Processing Timer +++++ 
@@ -439,7 +439,7 @@ rm(FileList_TransItems,
 
 # IV) SAVE Processed XML Transaction Data ######################################################################################
 
-setwd("~/Projects/Transaction Data Analysis/3 PD/3 Market Basket Analysis")
+setwd("~/Projects/Transaction Data Analyses/3 PD/3 Market Basket Analysis")
 
 saveRDS(  TransAttr, paste0("Transaction Attributes_Store ", store, "_", date_begin," - ", date_end,".rds")) 
 write.csv(TransAttr, paste0("Transaction Attributes_Store ", store, "_", date_begin," - ", date_end,".csv"), row.names = F)

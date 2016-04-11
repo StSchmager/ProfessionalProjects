@@ -31,14 +31,14 @@ options(stringsAsFactors = FALSE)
 # LLL = Lane  (e.g. 001 for lane 1)
 
 # Determine (store) input folders that contain XML files and list them
-setwd("~/Projects/Transaction Data Analysis/1 RD/XML Transaction Files")
+setwd("~/Projects/Transaction Data Analyses/1 RD/XML Transaction Files")
 Stores                  <- list.files()
        StoreList        <- list()
 length(StoreList)       <- length(Stores)
 
 # Loop through each store folder and read the filenames
 for (j in 1:length(Stores)) {
-      filefolder  <- paste0("~/Projects/Transaction Data Analysis/1 RD/XML Transaction Files/", Stores[j])
+      filefolder  <- paste0("~/Projects/Transaction Data Analyses/1 RD/XML Transaction Files/", Stores[j])
 setwd(filefolder)
 FileNames         <- list.files()
 
@@ -106,7 +106,7 @@ YearAgoDate <- ReportingDate- (7*52); difftime(ReportingDate, YearAgoDate, units
 if (nrow(FileIndex_OlderThanYear) > 0) { 
 for (j in 1:length(Stores)) {
 # *Loop through each store folder and delete files with the help of FileNames vector
-      setwd(paste0("~/Projects/Transaction Data Analysis/1 RD/XML Transaction Files/", Stores[j]));
+      setwd(paste0("~/Projects/Transaction Data Analyses/1 RD/XML Transaction Files/", Stores[j]));
       file.remove(FileIndex_OlderThanYear$FileNames[FileIndex_OlderThanYear$Store ==   Stores[j]])
 }
       }
@@ -163,7 +163,7 @@ ggplot(FileIndex_MostRecentWeek, aes(Date)) +
 # 1st Loop through store folders
 for (j in 1:length(Stores)) {
       
-      filefolder  <- paste0("~/Projects/Transaction Data Analysis/1 RD/XML Transaction Files/", Stores[j])
+      filefolder  <- paste0("~/Projects/Transaction Data Analyses/1 RD/XML Transaction Files/", Stores[j])
 
 files_selected    <- subset(FileIndex_MostRecentWeek, Store == as.numeric(Stores[j]))[, 1]
 
@@ -304,7 +304,7 @@ rm(filefolder, tree, i,
 # 3) Read and process CSV customer data ################################################################################
 # Retrieve account numbers of customers and their self-entered home ZIP codes from customer CSV file
 
-setwd("~/Projects/Transaction Data Analysis/1 RD/CSV Customer File")
+setwd("~/Projects/Transaction Data Analyses/1 RD/CSV Customer File")
 Customers <- read.csv(list.files(), colClasses = "character", na.strings = c("")) %>%
       select(         CardNumber,           PostalCode) %>%
       rename(CustNo = CardNumber,       # Customer number
@@ -408,10 +408,10 @@ Trans <- subset(Trans, !duplicated(Date), Date) %>%
 
 # 6) Import transaction data set from past weeks #######################################################################
 
-setwd("~/Projects/Transaction Data Analysis/3 PD/0 Transaction Data/All Stores & Recent Weeks")
+setwd("~/Projects/Transaction Data Analyses/3 PD/0 Transaction Data/All Stores & Recent Weeks")
 #Trans_Past  <- readRDS("Daily Transactions_All Stores_Recent Weeks.rds")
 
-setwd("~/Projects/Transaction Data Analysis/3 PD/1 ZIP-Code Analysis")
+setwd("~/Projects/Transaction Data Analyses/3 PD/1 ZIP-Code Analysis")
 Trans_Past  <- read.csv("Daily Transactions_All Stores_Recent 10 Weeks_2016-01-20 - 2016-03-29 (ZIP Codes).csv") %>% 
       mutate(ID         = factor(ID),
              StoreNo    = factor(StoreNo),
@@ -431,7 +431,7 @@ Trans_Past  <- read.csv("Daily Transactions_All Stores_Recent 10 Weeks_2016-01-2
 # 7) Read and process CSV ad-distribution data #########################################################################
 # Contains household counts per store per ZIP code that ad is distributed to weekly
 # (had been previously processed and cleaned from the original XLSX spreadsheet provided by the ad distributor)
-#setwd("~/Projects/Transaction Data Analysis/1 RD/XLS Ad Distribution")
+#setwd("~/Projects/Transaction Data Analyses/1 RD/XLS Ad Distribution")
 #AdDistribution <-    read.csv(list.files(), colClasses = c("factor","factor", "factor", "numeric")) %>% 
 #      rename(StoreNo        = Store,
 #             City           = City,
@@ -448,7 +448,7 @@ Trans_Past  <- read.csv("Daily Transactions_All Stores_Recent 10 Weeks_2016-01-2
 # How many transactions / How much sales were tied to ZIP Codes-- both entered by cashiers and enhanced by customers?
 # Did ZIP-code enhancement by customers decrease number of NAs?
 # Which cashiers do not enter ZIP codes at all or enter invalid or out-of-radius ZIP codes?
-setwd("~/Projects/Transaction Data Analysis/3 PD/1 ZIP-Code Analysis")
+setwd("~/Projects/Transaction Data Analyses/3 PD/1 ZIP-Code Analysis")
 select(Trans, ID,
        StoreNo, Date, Week,
        CashNo, CashName,

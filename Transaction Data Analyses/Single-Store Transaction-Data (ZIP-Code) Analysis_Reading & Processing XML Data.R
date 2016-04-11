@@ -30,7 +30,7 @@ options(stringsAsFactors = FALSE)
 
 ## Determine (store) input folder that contains XML files and list them
 Store             <- "8"        
-      filefolder  <- paste0("~/Projects/Transaction Data Analysis/1 RD/XML Transaction Files/", Store)
+      filefolder  <- paste0("~/Projects/Transaction Data Analyses/1 RD/XML Transaction Files/", Store)
 setwd(filefolder)
 FileNames         <- list.files()
 
@@ -234,7 +234,7 @@ rm(filefolder, tree, i,
 
 # Retrieve account numbers of customers and their self-entered home ZIP codes from customer CSV file
 
-setwd("~/Projects/Transaction Data Analysis/1 RD/CSV Customer File")
+setwd("~/Projects/Transaction Data Analyses/1 RD/CSV Customer File")
 Customers <- read.csv(list.files(), colClasses = "character", na.strings = c("")) %>%
       select(         CardNumber,           PostalCode) %>%
       dplyr::rename(CustNo = CardNumber,       # Customer number
@@ -336,14 +336,14 @@ Trans <- subset(Trans, !duplicated(Date), Date) %>%
 # 6) Export whole transaction data set #################################################################################
 
 # Save R data workspace
-save.image("~/Projects/Transaction Data Analysis/2 DP/Workspaces/Transaction Data Analysis Workspace.RData")
+save.image("~/Projects/Transaction Data Analyses/2 DP/Workspaces/Transaction Data Analysis Workspace.RData")
 
 # Save as R data object
-setwd(     "~/Projects/Transaction Data Analysis/3 PD/0 Transaction Data")
+setwd(     "~/Projects/Transaction Data Analyses/3 PD/0 Transaction Data")
 saveRDS(  Trans, paste0("Daily Transactions_Store ", Store, "_", date_start, " - ", date_end, ".rds"))
 
 # Save as CSV file
-setwd(     "~/Projects/Transaction Data Analysis/3 PD/1 ZIP-Code Analysis")
+setwd(     "~/Projects/Transaction Data Analyses/3 PD/1 ZIP-Code Analysis")
 write.csv(Trans, paste0("Daily Transactions_Store ", Store, "_", date_start, " - ", date_end, " (ZIP Codes).csv"))
 
 # 7) Read and process CSV ad-distribution data #########################################################################
@@ -351,7 +351,7 @@ write.csv(Trans, paste0("Daily Transactions_Store ", Store, "_", date_start, " -
 # Contains household counts per store, per ZIP code that ad is distributed to weekly
 # (had been previously processed and cleaned from the original XLSX spreadsheet provided by the ad distributor)
 
-setwd("~/Projects/Transaction Data Analysis/1 RD/XLS Ad Distribution")
+setwd("~/Projects/Transaction Data Analyses/1 RD/XLS Ad Distribution")
 AdDistribution <-    read.csv(list.files(), colClasses = c("factor","factor", "factor", "numeric")) %>% 
       dplyr::rename(StoreNo        = Store,
              City           = City,
@@ -369,14 +369,14 @@ AdDistribution <-    read.csv(list.files(), colClasses = c("factor","factor", "f
 
 ## Load Data from saved workspace ######################################################################################
 
-Trans <- readRDS("~/Projects/Transaction Data Analysis/3 PD/0 Transaction Data/Single Stores & All Weeks/Daily Transactions_Store 10_2015-01-01 - 2016-02-02.rds")
+Trans <- readRDS("~/Projects/Transaction Data Analyses/3 PD/0 Transaction Data/Single Stores & All Weeks/Daily Transactions_Store 10_2015-01-01 - 2016-02-02.rds")
 
 ## Prelimenary Analysis on data quality (cashier ZIP-code validity) externally in Tableau ##############################
 
 # How many transactions / How much sales were tied to ZIP Codes-- both entered by cashiers and enhanced by customers?
 # Did ZIP-code enhancement by customers decrease number of NAs?
 # Which cashiers do not enter ZIP codes at all or enter invalid or out-of-radius ZIP codes?
-setwd("~/Projects/Transaction Data Analysis/3 PD/1 ZIP-Code Analysis")
+setwd("~/Projects/Transaction Data Analyses/3 PD/1 ZIP-Code Analysis")
 select(Trans, ID,
        StoreNo, Date, Week,
        CashNo, CashName,
@@ -390,7 +390,7 @@ select(Trans, ID,
 
 ## Main Analysis #######################################################################################################
 
-setwd("~/Projects/Transaction Data Analysis/3 PD/1 ZIP-Code Analysis")
+setwd("~/Projects/Transaction Data Analyses/3 PD/1 ZIP-Code Analysis")
 # Disable scientific notation and display UPCs correctly
 options(scipen=999)
 
@@ -486,13 +486,13 @@ write.csv(ZIPSales, paste0("Annual Sales & Ad Cost per ZIP Code_Store ", Store, 
 # 8-IIa) Basket sizes by customer type (regular vs. rewards Customers) #################################################
 
 ## Load Data from saved workspace ######################################################################################
-data <- rbind(readRDS("~/Projects/Transaction Data Analysis/3 PD/0 Transaction Data/Single Stores & All Weeks/Daily Transactions_Store 12_2015-09-02 - 2016-02-16.rds"),
-              readRDS("~/Projects/Transaction Data Analysis/3 PD/0 Transaction Data/Single Stores & All Weeks/Daily Transactions_Store 11_2015-04-22 - 2016-02-16.rds"),
-              readRDS("~/Projects/Transaction Data Analysis/3 PD/0 Transaction Data/Single Stores & All Weeks/Daily Transactions_Store 10_2015-01-01 - 2016-02-16.rds"),
-              readRDS("~/Projects/Transaction Data Analysis/3 PD/0 Transaction Data/Single Stores & All Weeks/Daily Transactions_Store 9_2015-02-19 - 2016-02-23.rds"),
-              readRDS("~/Projects/Transaction Data Analysis/3 PD/0 Transaction Data/Single Stores & All Weeks/Daily Transactions_Store 8_2015-03-05 - 2016-02-16.rds"),
-              readRDS("~/Projects/Transaction Data Analysis/3 PD/0 Transaction Data/Single Stores & All Weeks/Daily Transactions_Store 7_2015-02-26 - 2016-02-23.rds"),
-              readRDS("~/Projects/Transaction Data Analysis/3 PD/0 Transaction Data/Single Stores & All Weeks/Daily Transactions_Store 5_2015-03-17 - 2016-02-23.rds"))
+data <- rbind(readRDS("~/Projects/Transaction Data Analyses/3 PD/0 Transaction Data/Single Stores & All Weeks/Daily Transactions_Store 12_2015-09-02 - 2016-02-16.rds"),
+              readRDS("~/Projects/Transaction Data Analyses/3 PD/0 Transaction Data/Single Stores & All Weeks/Daily Transactions_Store 11_2015-04-22 - 2016-02-16.rds"),
+              readRDS("~/Projects/Transaction Data Analyses/3 PD/0 Transaction Data/Single Stores & All Weeks/Daily Transactions_Store 10_2015-01-01 - 2016-02-16.rds"),
+              readRDS("~/Projects/Transaction Data Analyses/3 PD/0 Transaction Data/Single Stores & All Weeks/Daily Transactions_Store 9_2015-02-19 - 2016-02-23.rds"),
+              readRDS("~/Projects/Transaction Data Analyses/3 PD/0 Transaction Data/Single Stores & All Weeks/Daily Transactions_Store 8_2015-03-05 - 2016-02-16.rds"),
+              readRDS("~/Projects/Transaction Data Analyses/3 PD/0 Transaction Data/Single Stores & All Weeks/Daily Transactions_Store 7_2015-02-26 - 2016-02-23.rds"),
+              readRDS("~/Projects/Transaction Data Analyses/3 PD/0 Transaction Data/Single Stores & All Weeks/Daily Transactions_Store 5_2015-03-17 - 2016-02-23.rds"))
 
 Trans_RewCust <- select(data, ID,
                         StoreNo, Date,
@@ -597,7 +597,7 @@ t.test(Trans_RewCust$TotalSales_log[Trans_RewCust$RewCust == T],
        alternative = "greater")
 
 # 8-IIb) Purchase history/behavior of rewards customers ######################################################################
-setwd("~/Projects/Transaction Data Analysis/3 PD/Rewards Customer")
+setwd("~/Projects/Transaction Data Analyses/3 PD/Rewards Customer")
 Trans_RewCust     <- select(Trans, ID,
                             StoreNo, Date,
                             RewCust, CustNo,
