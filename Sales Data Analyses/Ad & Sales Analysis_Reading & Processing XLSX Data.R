@@ -559,22 +559,35 @@ OverallItemMovement_MMM <- rbind(OverallItemMovement_MMM,
 # Remove duplicated rows that have built up in the past
 #OverallItemMovement_MMM <- OverallItemMovement_MMM[!duplicated(OverallItemMovement_MMM)]
 
-filter(OverallItemMovement_MMM, Dept == "PRODUCE")  %>%     write.csv("PRODUCE Item Movement & Price Points Weekly per Store.csv",  row.names = F)
-filter(OverallItemMovement_MMM, Dept == "DELI")     %>%     write.csv("DELI Item Movement & Price Points Weekly per Store.csv",     row.names = F)
-filter(OverallItemMovement_MMM, Dept == "BAKERY")   %>%     write.csv("BAKERY Item Movement & Price Points Weekly per Store.csv",   row.names = F)
-filter(OverallItemMovement_MMM, Dept == "FLORAL")   %>%     write.csv("FLORAL Item Movement & Price Points Weekly per Store.csv",   row.names = F)
-filter(OverallItemMovement_MMM, Dept == "DELI HOT") %>%     write.csv("DELI HOT Item Movement & Price Points Weekly per Store.csv", row.names = F)
-filter(OverallItemMovement_MMM, Dept == "LIQUOR")   %>%     write.csv("LIQUOR Item Movement & Price Points Weekly per Store.csv",   row.names = F)
-filter(OverallItemMovement_MMM, Dept == "FROZEN")   %>%     write.csv("FROZEN Item Movement & Price Points Weekly per Store.csv",   row.names = F)
-filter(OverallItemMovement_MMM, Dept == "DAIRY")    %>%     write.csv("DAIRY Item Movement & Price Points Weekly per Store.csv",    row.names = F)
-filter(OverallItemMovement_MMM, Dept == "DAIRY")    %>%     write.csv("DAIRY Item Movement & Price Points Weekly per Store.csv",    row.names = F)
+filter(OverallItemMovement_MMM, Store == "1")         %>%   write.csv("STORE 1 Item Movement & Price Points Weekly per Dept.csv",   row.names = F)
+filter(OverallItemMovement_MMM, Store == "2")         %>%   write.csv("STORE 2 Item Movement & Price Points Weekly per Dept.csv",   row.names = F)
+filter(OverallItemMovement_MMM, Store == "3")         %>%   write.csv("STORE 3 Item Movement & Price Points Weekly per Dept.csv",   row.names = F)
+filter(OverallItemMovement_MMM, Store == "4")         %>%   write.csv("STORE 4 Item Movement & Price Points Weekly per Dept.csv",   row.names = F)
+filter(OverallItemMovement_MMM, Store == "5")         %>%   write.csv("STORE 5 Item Movement & Price Points Weekly per Dept.csv",   row.names = F)
+filter(OverallItemMovement_MMM, Store == "6")         %>%   write.csv("STORE 6 Item Movement & Price Points Weekly per Dept.csv",   row.names = F)
+filter(OverallItemMovement_MMM, Store == "7")         %>%   write.csv("STORE 7 Item Movement & Price Points Weekly per Dept.csv",   row.names = F)
+filter(OverallItemMovement_MMM, Store == "8")         %>%   write.csv("STORE 8 Item Movement & Price Points Weekly per Dept.csv",   row.names = F)
+filter(OverallItemMovement_MMM, Store == "9")         %>%   write.csv("STORE 9 Item Movement & Price Points Weekly per Dept.csv",   row.names = F)
+filter(OverallItemMovement_MMM, Store == "10")        %>%   write.csv("STORE 10 Item Movement & Price Points Weekly per Dept.csv",  row.names = F)
+filter(OverallItemMovement_MMM, Store == "11")        %>%   write.csv("STORE 11 Item Movement & Price Points Weekly per Dept.csv",  row.names = F)
+filter(OverallItemMovement_MMM, Store == "12")        %>%   write.csv("STORE 12 Item Movement & Price Points Weekly per Dept.csv",  row.names = F)
 
-filter(OverallItemMovement_MMM, Dept == "GROCERY" & SubDept == "GROCERY") %>%
-                                                            write.csv("GROCERY-GROCERY Item Movement & Price Points Weekly per Store.csv", row.names = F)
-filter(OverallItemMovement_MMM, Dept == "GROCERY" & SubDept == "BEVERAGE") %>%
-                                                            write.csv("GROCERY-BEVERAGE Item Movement & Price Points Weekly per Store.csv", row.names = F)
-filter(OverallItemMovement_MMM, Dept == "GROCERY" & SubDept == "NON FOOD") %>%
-                                                            write.csv("GROCERY-NON FOOD Item Movement & Price Points Weekly per Store.csv", row.names = F)
+filter(OverallItemMovement_MMM, Dept == "PRODUCE")    %>%   write.csv("PRODUCE Item Movement & Price Points Weekly per Store.csv",  row.names = F)
+filter(OverallItemMovement_MMM, Dept == "DELI")       %>%   write.csv("DELI Item Movement & Price Points Weekly per Store.csv",     row.names = F)
+filter(OverallItemMovement_MMM, Dept == "BAKERY")     %>%   write.csv("BAKERY Item Movement & Price Points Weekly per Store.csv",   row.names = F)
+filter(OverallItemMovement_MMM, Dept == "FLORAL")     %>%   write.csv("FLORAL Item Movement & Price Points Weekly per Store.csv",   row.names = F)
+filter(OverallItemMovement_MMM, Dept == "DELI HOT")   %>%   write.csv("DELI HOT Item Movement & Price Points Weekly per Store.csv", row.names = F)
+filter(OverallItemMovement_MMM, Dept == "LIQUOR")     %>%   write.csv("LIQUOR Item Movement & Price Points Weekly per Store.csv",   row.names = F)
+filter(OverallItemMovement_MMM, Dept == "FROZEN")     %>%   write.csv("FROZEN Item Movement & Price Points Weekly per Store.csv",   row.names = F)
+filter(OverallItemMovement_MMM, Dept == "DAIRY")      %>%   write.csv("DAIRY Item Movement & Price Points Weekly per Store.csv",    row.names = F)
+filter(OverallItemMovement_MMM, Dept == "DAIRY")      %>%   write.csv("DAIRY Item Movement & Price Points Weekly per Store.csv",    row.names = F)
+
+filter(OverallItemMovement_MMM, Dept == "GROCERY" &
+             SubDept == "GROCERY")                    %>%   write.csv("GROCERY-GROCERY Item Movement & Price Points Weekly per Store.csv", row.names = F)
+filter(OverallItemMovement_MMM, Dept == "GROCERY" &
+             SubDept == "BEVERAGE")                   %>%   write.csv("GROCERY-BEVERAGE Item Movement & Price Points Weekly per Store.csv", row.names = F)
+filter(OverallItemMovement_MMM, Dept == "GROCERY" &
+             SubDept == "NON FOOD")                   %>%   write.csv("GROCERY-NON FOOD Item Movement & Price Points Weekly per Store.csv", row.names = F)
 
 saveRDS(OverallItemMovement_MMM, "ALL DEPT. Item Movement & Price Points Weekly per Store.rds")
 
