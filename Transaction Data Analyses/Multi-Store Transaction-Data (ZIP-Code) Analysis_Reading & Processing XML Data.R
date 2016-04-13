@@ -87,18 +87,18 @@ ggplot(FileIndex, aes(Date)) +
       ggtitle("Transaction Files from All Stores / All Dates Transferred") +
       xlab("Check for gaps or dips to determine whether some XML files / whole dates were not transfered from the store servers") +
       ylab("Number of XML Files Transferred") +
-      scale_x_date(labels = date_format("%m/%d/%y"),
-                   breaks = date_breaks("1 month")) +
+      scale_x_date(labels = date_format("%m/%d"),
+                   breaks = date_breaks("1 week")) +
       scale_y_discrete(breaks = seq(0, 20, 5)) +
       #theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
       facet_grid(Store ~ ., scales="free_y")
 
 # 1b) Delete XML files that are older than one year (more exactly 52 weeks) ############################################
 
-ReportingDate <- as.Date("2016-04-06")
+ReportingDate <- as.Date("2016-04-13")
+ReportingDate <- Sys.Date()
 
 # Determine data a year ago via Sys.Date() or date of past reporting (Wednes)day
-YearAgoDate <- Sys.Date()-    (7*52); difftime(Sys.Date(),    YearAgoDate, units = "weeks")
 YearAgoDate <- ReportingDate- (7*52); difftime(ReportingDate, YearAgoDate, units = "weeks")
 
 # Delete the XML files (from from storage* AND dataframe**) that are OLDER than 52 weeks days 
@@ -458,10 +458,11 @@ select(Trans, ID,
        ZIPComp,
        TotalSales) %>% 
       rbind(Trans_Past) %>% 
+      unique() %>% 
       write.csv(paste0("Daily Transactions_All Stores_",
                        #length(unique(Trans$Week)),
-                       #" Weeks_",
-                       min(Trans$Date), " - ", max(Trans$Date),
+                       "Recent Weeks",
+                       #"_", min(Trans$Date), " - ", max(Trans$Date),
                        " (ZIP Codes).csv"), row.names = F)
 
-saveRDS(Trans, "Daily Transactions_All Stores_Recent Weeks.rds")
+saveRDS(Trans, "Daily Transactions_All Stores_Recent Weeks (ZIP Codes).rds")
