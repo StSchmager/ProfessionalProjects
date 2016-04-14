@@ -409,24 +409,24 @@ Trans <- subset(Trans, !duplicated(Date), Date) %>%
 # 6) Import transaction data set from past weeks #######################################################################
 
 setwd("~/Projects/Transaction Data Analyses/3 PD/0 Transaction Data/All Stores & Recent Weeks")
-#Trans_Past  <- readRDS("Daily Transactions_All Stores_Recent Weeks.rds")
+Trans_Past  <- readRDS("Daily Transactions_All Stores_Recent Weeks (ZIP Codes).rds")
 
-setwd("~/Projects/Transaction Data Analyses/3 PD/1 ZIP-Code Analysis")
-Trans_Past  <- read.csv("Daily Transactions_All Stores_Recent 10 Weeks_2016-01-20 - 2016-03-29 (ZIP Codes).csv") %>% 
-      mutate(ID         = factor(ID),
-             StoreNo    = factor(StoreNo),
-             Date       = as.Date(Date),
-             Week       = factor(Week),
-             CashNo     = factor(CashNo),
-            #CashName   = CashName,
-             ZIPCash    = factor(ZIPCash), 
-            #IsZIPCash  = IsZIPCash,
-             ZIPCust    = factor(ZIPCust),
-            #IsZIPCust  = IsZIPCust,
-             ZIP        = factor(ZIP),
-            #IsZIP      = factor(IsZIP),
-            #ZIPComp    = ZIPComp,
-             TotalSales = as.numeric(TotalSales))
+#setwd("~/Projects/Transaction Data Analyses/3 PD/1 ZIP-Code Analysis")
+#Trans_Past  <- read.csv("Daily Transactions_All Stores_2016-03-30 - 2016-04-05 (ZIP Codes).csv") %>% 
+#      mutate(ID         = factor(ID),
+#             StoreNo    = factor(StoreNo),
+#             Date       = as.Date(Date),
+#             Week       = factor(Week),
+#             CashNo     = factor(CashNo),
+#            #CashName   = CashName,
+#             ZIPCash    = factor(ZIPCash), 
+#            #IsZIPCash  = IsZIPCash,
+#             ZIPCust    = factor(ZIPCust),
+#            #IsZIPCust  = IsZIPCust,
+#             ZIP        = factor(ZIP),
+#            #IsZIP      = factor(IsZIP),
+#            #ZIPComp    = ZIPComp,
+#             TotalSales = as.numeric(TotalSales))
 
 # 7) Read and process CSV ad-distribution data #########################################################################
 # Contains household counts per store per ZIP code that ad is distributed to weekly
