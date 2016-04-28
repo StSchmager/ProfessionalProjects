@@ -918,14 +918,14 @@ write.csv(Company, "5 Company.csv", row.names = F)
 # 11) Finish ###########################################################################################################
 
 # +++++ Processing Timer & Status ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-timer_split       <- Sys.time()
-progress_time     <- difftime(timer_split, timer_begin, units = c("mins"))
-progress_perc     <- i/length(Weeks)
-timer_end         <- timer_begin + (progress_time/progress_perc)
-print(paste("Week of ", Weeks[i], "successfully processed........................", round(progress_perc*100, 2), "%"))
-print(paste(round(progress_time, 1), "minutes since processing started. Expected to be completed.......", timer_end))
+#timer_split       <- Sys.time()
+#progress_time     <- difftime(timer_split, timer_begin, units = c("mins"))
+#progress_perc     <- i/length(Weeks)
+#timer_end         <- timer_begin + (progress_time/progress_perc)
+#print(paste("Week of ", Weeks[i], "successfully processed........................", round(progress_perc*100, 2), "%"))
+#print(paste(round(progress_time, 1), "minutes since processing started. Expected to be completed.......", timer_end))
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 }
 
-print(paste("Process ended: ", Sys.time()))
+#print(paste("Process ended: ", Sys.time()))

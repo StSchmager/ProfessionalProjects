@@ -95,7 +95,7 @@ ggplot(FileIndex, aes(Date)) +
 
 # 1b) Delete XML files that are older than one year (more exactly 52 weeks) ############################################
 
-ReportingDate <- as.Date("2016-04-13")
+ReportingDate <- as.Date("2016-04-27")
 ReportingDate <- Sys.Date()
 
 # Determine data a year ago via Sys.Date() or date of past reporting (Wednes)day
@@ -116,9 +116,13 @@ FileIndex                           <- filter(FileIndex, Date >= YearAgoDate)
 
 # 1c) Prepare most recent week #########################################################################################
 
-# Define the most recent week
+# Determine most recent week/s AUTOMATICALLY
 WeekEndDate       <- max(FileIndex$Date)
 WeekStartDate     <- WeekEndDate-6
+
+# Determine most recent week/s MANUALLY
+WeekEndDate       <- as.Date("2016-04-19")
+WeekStartDate     <- as.Date("2016-04-13")
 
 # Check if available data dates comprise 52 weeks
 FirstDate         <- min(FileIndex$Date)
@@ -408,25 +412,25 @@ Trans <- subset(Trans, !duplicated(Date), Date) %>%
 
 # 6) Import transaction data set from past weeks #######################################################################
 
-setwd("~/Projects/Transaction Data Analyses/3 PD/0 Transaction Data/All Stores & Recent Weeks")
-Trans_Past  <- readRDS("Daily Transactions_All Stores_Recent Weeks (ZIP Codes).rds")
+setwd("~/Projects/Transaction Data Analyses/3 PD/1 ZIP-Code Analysis")
+Trans_Past  <- readRDS( "Daily Transactions_All Stores_Recent Weeks (ZIP Codes).rds")
 
-#setwd("~/Projects/Transaction Data Analyses/3 PD/1 ZIP-Code Analysis")
-#Trans_Past  <- read.csv("Daily Transactions_All Stores_2016-03-30 - 2016-04-05 (ZIP Codes).csv") %>% 
-#      mutate(ID         = factor(ID),
-#             StoreNo    = factor(StoreNo),
-#             Date       = as.Date(Date),
-#             Week       = factor(Week),
-#             CashNo     = factor(CashNo),
-#            #CashName   = CashName,
-#             ZIPCash    = factor(ZIPCash), 
-#            #IsZIPCash  = IsZIPCash,
-#             ZIPCust    = factor(ZIPCust),
-#            #IsZIPCust  = IsZIPCust,
-#             ZIP        = factor(ZIP),
-#            #IsZIP      = factor(IsZIP),
-#            #ZIPComp    = ZIPComp,
-#             TotalSales = as.numeric(TotalSales))
+setwd("~/Projects/Transaction Data Analyses/3 PD/1 ZIP-Code Analysis")
+Trans_Past  <- read.csv("Daily Transactions_All Stores_Recent Weeks (ZIP Codes).csv") %>% 
+      mutate(ID         = factor(ID),
+             StoreNo    = factor(StoreNo),
+             Date       = as.Date(Date),
+             Week       = factor(Week),
+             CashNo     = factor(CashNo),
+            #CashName   = CashName,
+             ZIPCash    = factor(ZIPCash), 
+            #IsZIPCash  = IsZIPCash,
+             ZIPCust    = factor(ZIPCust),
+            #IsZIPCust  = IsZIPCust,
+             ZIP        = factor(ZIP),
+            #IsZIP      = factor(IsZIP),
+            #ZIPComp    = ZIPComp,
+             TotalSales = as.numeric(TotalSales))
 
 # 7) Read and process CSV ad-distribution data #########################################################################
 # Contains household counts per store per ZIP code that ad is distributed to weekly
