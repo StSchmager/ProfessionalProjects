@@ -1,5 +1,7 @@
 # Reading, Processing, Exporting of Point-of-Sale Transaction Data Formatted in XML 
 
+This R script is pivotal to my first analysis of (customer ZIP codes extracted from) transaction data which are stored in XML files. The scripts take in complex, tree-structured data from thousands of XML files; each file contains sales transaction information (e.g. customer number, items purchased, sales totals, date/time, et cetera) that's collected at each checkout lane, in each retail store, each day. Those data are then read, munged and joined/enhanced with additional data from external data sources (e.g. customer file). Ultimately, the data output is simplified: compared to the initial tree-structured input data, the output consist of tabular CSV datasets with various detail levels (subsets/aggregations) that are then used for research-question based data exploration, analyses, visualizations, and communication/presentation with the help of Tableau.
+
 ## Input Data
 This script takes a folder, that contains a big amount of XML files (ranging from 4,000 to more than 7,000) as its main input, loops through those files, reads the same specified information from each file repeatedly, and organizes/binds them into one major dataset.
 
