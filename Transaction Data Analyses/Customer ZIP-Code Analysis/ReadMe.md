@@ -1,12 +1,12 @@
-# Reading, Processing, Exporting of Point-of-Sale Transaction Data Formatted in XML 
+# Reading & Processing XML Transaction Data
 
-This R script is pivotal to my first analysis of (customer ZIP codes extracted from) transaction data which are stored in XML files. The scripts take in complex, tree-structured data from thousands of XML files; each file contains sales transaction information (e.g. customer number, items purchased, sales totals, date/time, et cetera) that's collected at each checkout lane, in each retail store, each day. Those data are then read, munged and joined/enhanced with additional data from external data sources (e.g. customer file). Ultimately, the data output is simplified: compared to the initial tree-structured input data, the output consist of tabular CSV datasets with various detail levels (subsets/aggregations) that are then used for research-question based data exploration, analyses, visualizations, and communication/presentation with the help of Tableau.
+The R script 1 & 2 are pivotal to my first analysis of transaction data (analysis of customer ZIP codes contained therein) which are stored in XML files. These contain complex, tree-structured data from thousands of XML files since each file contains sales transaction information that's collected at each checkout lane, in each retail store, each day. Transaction data such as items purchased, sales totals, date/time, customer number, et cetera are then read, munged and joined/enhanced with additional data from external data sources, e.g. customer file with customer ZIP codes.
+Ultimately, the data output is simplified because -- compared to the initial tree-structured input data -- the output consist of conventional tabular CSV datasets. They vary by detail  due to data subsettting/aggregations) and are then used for research-question based data exploration, analyses, visualizations, and communication/presentation with the help of Tableau.
 
 ## Input Data
-This script takes a folder, that contains a big amount of XML files (ranging from 4,000 to more than 7,000) as its main input, loops through those files, reads the same specified information from each file repeatedly, and organizes/binds them into one major dataset.
+The reading/processing script takes in one folder (per single store) or various folders (for multiple stores), that contain a big amount of XML files (ranging from 4,000 to more than 7,000) as its main input, loops through those files (and folders in case of multi-store reading), reads the same specified information from each file repeatedly, and organizes/binds them into one major dataset.
 
-Each XML file contains daily point-of-sale transaction data that is recorded by cash-register scanners and stored per checkout lane at one particular store.
-The transaction data set is additionally enhanced by joining in data from other, external data sources like a 
+Each XML file contains daily, point-of-sale transaction data that is collected by cash-register scanners and recorded by cashier entries. The transaction data set is additionally enhanced by joining in data from other, external data sources like a 
 * Customer data set (with customer account numbers and their ZIP codes),
 * ZIP-code data set (with valid U.S. ZIP codes), and
 * Sales-paper distribution data set (with household counts per ZIP code, per store).
@@ -14,7 +14,7 @@ The transaction data set is additionally enhanced by joining in data from other,
 ## Processed Data
 The processed data set is stored in the R memory space and is additionally backed up by a R-object file.
 
-The data set contains information for __each customer transaction__ (observation/rows) from one store in a specified date range and is described by the following __transaction features__ (variables/columns), which either originate from the XML file or were added as a consequence of certain data joins or transfromations.
+The data set contains information for __each customer transaction__ (observation/rows) from one/multiple store/s in a specified date range and is described by the following __transaction features__ (variables/columns), which either originate from the XML file or were added as a consequence of certain data joins or transfromations.
 
 Variable Name | Description
 --------------|--------------------------------------------------------------------------------------------------------------------
@@ -43,4 +43,4 @@ __IsZIP__     | Boolean indicator: TRUE, if ZIP code could be matched against li
 __ZIPComp__   | Boolean indicator: TRUE, if aforementioned ZIP codes are identical; FALSE, if not (NA, if comparison could not be performed because either one of the ZIP codes is not available)
 
 ## Output Data
-Depending on the particular research question and analysis problem, the processed data set is further subset and/or aggregated in order to reduce levels of information and storage-space size. It is then exported to a tabular format and saved as a CSV file in order to be loaded into Tableau, a software in which the research questions and analysis problems can be solved with the help of intuitive and quick data visualization/exploration.
+Depending on the particular research question and analysis problem, the processed data set is further subset and/or aggregated in order to reduce levels of information and storage-space size. It is then exported to a tabular format and saved as a CSV file in order to be loaded into Tableau, a software in which the research questions and analysis problems can be solved with the help of intuitive and quicker data visualization/exploration.
