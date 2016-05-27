@@ -5,7 +5,8 @@ I work one two overall kinds of projects that may be clustered according to thei
 
 ## Product Categorization
 
-The category of a product (e.g. "Canned Tomato Sauce") is an important data point that bridges the gap between a too broad grouping variable like main- or sub-departments (e.g. "Grocery") and the too detailed item entity of SKUs (e.g. "16 oz. Tomato Sauce of Brand XYZ"). On the one hand, categories help break down aggregated department data and determine the sales drivers within a departemnt (see Ad & Sales Reporting). On the other hand, categories help lift SKU-level findings to a more general, meaningful level of findings that is not noo general, hence, not meaningful as in the case of departments.
+The category of a product (e.g. "Canned Tomato Sauce") is an important (meta-)data point that bridges the gap between a rather broad grouping variables like main- or sub-departments (e.g. "Grocery" or "Produce-Fruit") on the one hand and the too detailed item entity, SKUs (e.g. "16 oz. Tomato Sauce of Brand XYZ"), on the other hand.
+Accurate product categories provide additional value to my reporting and analyses. First, they help break down aggregated department data (e.g. sales, margins) and determine the (sales or margin) drivers within a departemnt (see Ad & Sales Reporting). More, categories help lift SKU-level findings to a more general, more meaningful level that is not too general, hence, not meaningful as in the case of departments. For example, a market-basket analysis conducted on a SKU-level would render a minimum of association rules; conducted on a department-level the same analysis would render the maximal amount of association rules since it's likely that items from many departments land in the same transaction. Conducting a market-basket analysis on a category-level would be the sweet spot and promise the most meaningful product-category associations.
 
 ## Sales-Data Analyses
 
