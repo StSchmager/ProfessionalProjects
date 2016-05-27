@@ -66,7 +66,8 @@ for (h in 1:length(files)) {
 # Collapse dataframes of the list into one dataframe (Remove data objects that are not needed anymore)
 Categories  <- ldply(FileList, data.frame); rm(files, FileList, h)
 # Filter out duplicated rows
-Categories <- filter(Categories, !duplicated(Categories))
+Categories <- filter(Categories, !duplicated(Categories)) %>% 
+      mutate(UPC = as.character(UPC))
 
 # 3) DATA IMPORT: PRODUCT w/ movement ##################################################################################
 
@@ -77,8 +78,8 @@ Items <- mutate(Items,
                 UPC         = as.character(UPC))
                       
 # Determine sales week w/ 7 days & 7+ days (special sales weeks like Thanksgiving & Christmas)                      
-Items$WeekAfterNo_factor <- sapply(Items$Week_factor,        function(x) {grep(x, levels(Items$Week_factor))+1})
-Items$WeekAfter_factor   <- sapply(Items$WeekAfterNo_factor, function(x) {c(levels(Items$Week_factor), 
+#Items$WeekAfterNo_factor <- sapply(Items$Week_factor,        function(x) {grep(x, levels(Items$Week_factor))+1})
+#Items$WeekAfter_factor   <- sapply(Items$WeekAfterNo_factor, function(x) {c(levels(Items$Week_factor), 
                                                                             as.character(max(Items$Week)+6))[x]})
                       
 
@@ -110,13 +111,15 @@ DeptCatProd <- select(Items,
                       Week, # ---------> Aggregate Sales across Weeks
                       Dept, SubDept, UPC, Product, Sales)               %>%
       group_by(       Dept, SubDept, UPC, Product)                      %>% 
-      summarise(TotalSales     = sum(              Sales, na.rm = T),
-                AvgWeeklySales = sum(              Sales, na.rm = T)/
-                                                   # Number of weeks reported: Last reporting day - First reporting day divided by 7 days            
-                                                   round(as.numeric((         (max(Items$Week)+6) - min(Items$Week)     )/7),            0)) %>%
+      summarise(TotalSales     = sum(              Sales, na.rm = T)#,
+#                AvgWeeklySales = sum(              Sales, na.rm = T)/
+                                 # Number of weeks reported: Last reporting day - First reporting day divided by 7 days            
+#                                 round(as.numeric((         (max(Items$Week)+6) - min(Items$Week)     )/7),            0)
+                ) %>%
       left_join(Categories, by = "UPC") %>% 
-      mutate(UPC = factor(UPC))
-      #select(Dept, SubDept, Category, UPC, Product) %>% 
+      #mutate(UPC = factor(UPC)) %>% 
+      select(Dept, SubDept, Category, CategoryNo, UPC, Product, TotalSales) %>% 
+      unique()
       
 
 DeptCat     <-  

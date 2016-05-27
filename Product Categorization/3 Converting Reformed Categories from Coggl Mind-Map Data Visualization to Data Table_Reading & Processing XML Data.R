@@ -4,7 +4,7 @@
 # Download this mindmap as .mm File and name file
 File <- "Product Categories.mm"
 # Save into working directory and read file from there
-setwd("C:/Users/Stefan/Google Drive/Projects/3 Transaction-Data Analyses/0 Org/3 Market Basket Analysis/Product Categorization/Coggl Mindmap")
+setwd("C:/Users/Stefan/Google Drive/Projects/3 Transaction-Data Analyses/0 Org/3 Market Basket Analysis/Product Categorization/Coggl Mindmap/1 Raw Data")
 
 # 2) Read tree-shaped XML Data & Process/Convert to Tabular XLSX Data ##################################################
 
@@ -39,6 +39,8 @@ for (                                                              i in 1:length
                                                     (as.character(seq(  1,length(LeaveNodeAncestors_List[[i]])))))
       }
 
+setwd("C:/Users/Stefan/Google Drive/Projects/3 Transaction-Data Analyses/0 Org/3 Market Basket Analysis/Product Categorization/Coggl Mindmap/3 Processed Data")
+
 ## III. Convert (Nested) List to Data Frame in R
 LeaveNodeAncestors_Table<- rbindlist(LeaveNodeAncestors_List, fill = T) %>% as.data.frame() %>% 
       select(-c(1:2)) %>% 
@@ -47,7 +49,8 @@ LeaveNodeAncestors_Table<- rbindlist(LeaveNodeAncestors_List, fill = T) %>% as.d
                 Cat1    = gsub("#", "", AncestorNode5),
                 Cat2    = gsub("#", "", AncestorNode6),
                 Cat3    = gsub("#", "", AncestorNode7)) %>% 
+      mutate(Category   = paste(Cat3, Cat2, Cat1)) %>% 
 
 # 3) Export Processed XLSX Data ########################################################################################
 
-write.xlsx("Product Categories.xlsx", row.names = F)
+write.csv("Product Categories.csv", row.names = F)
