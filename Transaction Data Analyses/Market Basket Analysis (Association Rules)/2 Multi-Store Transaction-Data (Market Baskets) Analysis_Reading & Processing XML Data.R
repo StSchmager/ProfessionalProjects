@@ -103,8 +103,8 @@ ggplot(FileIndex, aes(Date)) +
 
 
 # b) Manual DATE range
-date_begin  <- as.Date("2016-05-25")
-date_end    <- as.Date("2016-06-01")
+date_begin  <- as.Date("2016-06-22")
+date_end    <- as.Date("2016-07-05")
 
 # c) Populate date range completely and fill in dates between start and end date
 date_range  <- seq.Date(from = date_begin,
@@ -480,7 +480,7 @@ rm(FileList_TransItems,
    FileList_ItemAttr,
    FileList_TransAttr)
 
-# IV) SAVE Processed XML Transaction Data ######################################################################################
+# IV) SAVE Processed XML Transaction Data ##############################################################################
 
 setwd("~/Projects/Transaction Data Analyses/3 PD/3 Market Basket Analysis/RedPlum Coupon Wrapper")
 
@@ -492,3 +492,52 @@ write.csv(ItemAttr,   paste0("Item Attributes_All Stores_", date_begin," - ", da
 
 saveRDS(  TransItems, paste0("Transaction Items_All Stores_", date_begin," - ", date_end,".rds")) 
 write.csv(TransItems, paste0("Transaction Items_All Stores_", date_begin," - ", date_end,".csv"), row.names = F)
+
+# V ANALYZE ############################################################################################################
+
+## Coupon Redemption Analysis (RedPlum wrapper in May, Memorial Day, and June, Jouly Fourth)
+
+CouponNo_May      <- c("0000000000493", "0000000000494", "0000000000495", "0000000000496")
+CouponDesc_May    <- c("Coupon_Chips",  "Coupon_Steak",  "Coupon_Eggs",   "Coupon_Water")
+CouponNo_Jun      <- c("0000000005911", "0000000005912", "0000000005913", "0000000005914")
+CouponDesc_Jun    <- c("Coupon_Chia",   "Coupon_Salads", "Coupon_Dairy",  "Coupon_Cheese")
+
+setwd("~/Projects/Transaction Data Analyses/3 PD/3 Market Basket Analysis/RedPlum Coupon Wrapper")
+
+TransAttr_May     <- readRDS("Transaction Attributes_All Stores_2016-05-25 - 2016-06-01.rds")
+TransAttr_Jun     <- readRDS("Transaction Attributes_All Stores_2016-06-22 - 2016-07-05.rds")
+
+# Filter coupon codes and re-label them with description
+TransItems_May    <- readRDS("Transaction Items_All Stores_2016-05-25 - 2016-06-01.rds") %>% 
+      filter(UPC %in%                   CouponNo_May) %>% 
+      mutate(UPC = factor(UPC, levels = CouponNo_May, labels = CouponDesc_May))
+TransItems_Jun    <- readRDS("Transaction Items_All Stores_2016-06-22 - 2016-07-05.rds") %>% 
+      filter(UPC %in%                   CouponNo_Jun) %>% 
+      mutate(UPC = factor(UPC, levels = CouponNo_Jun, labels = CouponDesc_Jun))
+
+# Flag transaction which particular coupon has been redeemed and count coupons per transaction
+TransAttr_May   <- spread(TransItems_May, UPC, CouponCount) %>% 
+      group_by(TransID) %>% 
+      summarize(Coupon_Chips = sum(Coupon_Chips, na.rm = TRUE),
+                Coupon_Steak = sum(Coupon_Steak, na.rm = TRUE),
+                Coupon_Eggs  = sum(Coupon_Eggs, na.rm = TRUE),
+                Coupon_Water = sum(Coupon_Water, na.rm = TRUE)) %>% 
+      join(TransAttr_May, type = "right", by = "TransID") %>% 
+      mutate(CouponCount = Coupon_Chips + Coupon_Steak + Coupon_Eggs + Coupon_Water)
+TransAttr_Jun   <- spread(TransItems_Jun, UPC, CouponCount) %>% 
+      group_by(TransID) %>% 
+      summarize(Coupon_Chia   = sum(Coupon_Chia, na.rm = TRUE),
+                Coupon_Salads = sum(Coupon_Salads, na.rm = TRUE),
+                Coupon_Dairy  = sum(Coupon_Dairy, na.rm = TRUE),
+                Coupon_Cheese = sum(Coupon_Cheese, na.rm = TRUE)) %>% 
+      join(TransAttr_Jun, type = "right", by = "TransID") %>% 
+      mutate(CouponCount = Coupon_Chia + Coupon_Salads + Coupon_Dairy + Coupon_Cheese)
+
+saveRDS(  TransAttr_May, "Transaction Attributes_All Stores_2016-05-25 - 2016-06-01.rds")
+write.csv(TransAttr_May, "Transaction Attributes_All Stores_2016-05-25 - 2016-06-01.csv")
+saveRDS(  TransAttr_Jun, "Transaction Attributes_All Stores_2016-06-22 - 2016-07-05.rds")
+write.csv(TransAttr_Jun, "Transaction Attributes_All Stores_2016-06-22 - 2016-07-05.csv")
+saveRDS(  TransItems_May, "Transaction Items_All Stores_2016-05-25 - 2016-06-01.rds")
+write.csv(TransItems_May, "Transaction Items_All Stores_2016-05-25 - 2016-06-01.csv")
+saveRDS(  TransItems_Jun, "Transaction Items_All Stores_2016-06-22 - 2016-07-05.rds")
+write.csv(TransItems_Jun, "Transaction Items_All Stores_2016-06-22 - 2016-07-05.csv")
