@@ -81,10 +81,11 @@ rm(StoreList, j)
 # not transfered from store server to R server
 ggplot(FileIndex, aes(Date)) +
       geom_histogram(binwidth = 1, alpha=.5) +
-      ggtitle("Check for gaps or dips to determine whether some XML files were not transfered from the store servers") +
+      ggtitle("Transaction Files from All Stores / All Dates Transferred") +
+      xlab("Check for gaps or dips to determine whether some XML files / whole dates were not transfered from the store servers") +
       ylab("Number of XML Files Transferred") +
-      scale_x_date(labels = date_format("%m/%d/%y"),
-                   breaks = date_breaks("1 month")) +
+      scale_x_date(labels = date_format("%m/%d"),
+                   breaks = date_breaks("1 week")) +
       scale_y_discrete(breaks = seq(0, 20, 5)) +
       #theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
       facet_grid(Store ~ ., scales="free_y")
@@ -95,17 +96,18 @@ ggplot(FileIndex, aes(Date)) +
 
 ## STORE
 
-store <- "5"
+store <- "3"
 
 ## DATES
 
-# a) Default DATE range of earliest/latest date contained
-date_begin  <- min(as.Date(FileIndex$Date))
+# a) Default DATE range: most recent week
 date_end    <- max(as.Date(FileIndex$Date))
+date_begin  <- date_end-6
+
 
 # b) Manual DATE range
-#date_begin <- as.Date("2015-03-05")
-#date_end    <- as.Date("2015-03-31")
+date_begin  <- as.Date("2015-08-01")
+date_end    <- as.Date("2016-07-31")
 
 # c) Populate date range completely and fill in dates between start and end date
 date_range  <- seq.Date(from = date_begin,
@@ -340,7 +342,7 @@ for (i in 1:length(files_selected)) {
 
             # Save dataframes per file in file ist
             FileList_TransItems[[i]]      <- TransItems
-            #FileList_ItemAttr[[i]]        <- ItemAttr
+            FileList_ItemAttr[[i]]        <- ItemAttr
             FileList_TransAttr[[i]]       <- TransAttr
             
             rm(tree,
@@ -416,9 +418,9 @@ TransAttr   <- plyr::ldply(FileList_TransAttr, data.frame) %>%
              CashName      = as.character(CashName),
              CustNo        = factor(CustNo),
              CustName      = as.character(CustName),
-             ZIPCash       = factor(clean.zipcodes(ZIPCash))) %>% 
-      left_join(TransItemCount, by = "TransID")
-             rm(TransItemCount)
+             ZIPCash       = factor(clean.zipcodes(ZIPCash))) #%>% 
+      #left_join(TransItemCount, by = "TransID")
+      #       rm(TransItemCount)
 
 # Create start/end date-time variables that cannot be built in mutate/transmute command
 TransAttr$SDateTime            <- strptime(paste(TransAttr$SDate, TransAttr$STime), format = "%Y-%m-%d %H:%M:%S")
@@ -427,7 +429,7 @@ TransAttr$Duration_sec         <- TransAttr$EDateTime-TransAttr$SDateTime
 
 TransAttr <- select(TransAttr,
                     TransID, Type,
-                    TotalSales, TransItemCount, UniqueUPCs,
+                    TotalSales, #UniqueUPCs,
                     SDateTime, EDateTime, Duration_sec,
                     Store, Lane,
                     CashNo, CashName, CustNo, CustName,
@@ -441,8 +443,11 @@ rm(FileList_TransItems,
 
 setwd("~/Projects/Transaction Data Analyses/3 PD/3 Market Basket Analysis")
 
-saveRDS(  TransAttr, paste0("Transaction Attributes_Store ", store, "_", date_begin," - ", date_end,".rds")) 
-write.csv(TransAttr, paste0("Transaction Attributes_Store ", store, "_", date_begin," - ", date_end,".csv"), row.names = F)
+saveRDS(  TransAttr,  paste0("Transaction Attributes_Store ", store, "_", date_begin," - ", date_end,".rds")) 
+write.csv(TransAttr,  paste0("Transaction Attributes_Store ", store, "_", date_begin," - ", date_end,".csv"), row.names = F)
+
+saveRDS(  ItemAttr,   paste0("Item Attributes_Store ", store, "_", date_begin," - ", date_end,".rds")) 
+write.csv(ItemAttr,   paste0("Item Attributes_Store ", store, "_", date_begin," - ", date_end,".csv"), row.names = F)
 
 saveRDS(  TransItems, paste0("Transaction Items_Store ", store, "_", date_begin," - ", date_end,".rds")) 
 write.csv(TransItems, paste0("Transaction Items_Store ", store, "_", date_begin," - ", date_end,".csv"), row.names = F)

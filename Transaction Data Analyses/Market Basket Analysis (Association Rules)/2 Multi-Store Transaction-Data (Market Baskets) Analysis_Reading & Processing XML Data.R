@@ -497,26 +497,29 @@ write.csv(TransItems, paste0("Transaction Items_All Stores_", date_begin," - ", 
 
 ## Coupon Redemption Analysis (RedPlum wrapper in May, Memorial Day, and June, Jouly Fourth)
 
-CouponNo_May      <- c("0000000000493", "0000000000494", "0000000000495", "0000000000496")
+CouponNo_May      <- c("0000000000493", "0000000000494", "0000000000467", "0000000000496")
 CouponDesc_May    <- c("Coupon_Chips",  "Coupon_Steak",  "Coupon_Eggs",   "Coupon_Water")
 CouponNo_Jun      <- c("0000000005911", "0000000005912", "0000000005913", "0000000005914")
 CouponDesc_Jun    <- c("Coupon_Chia",   "Coupon_Salads", "Coupon_Dairy",  "Coupon_Cheese")
 
 setwd("~/Projects/Transaction Data Analyses/3 PD/3 Market Basket Analysis/RedPlum Coupon Wrapper")
 
+ItemAttr_May     <- readRDS("Item Attributes_All Stores_2016-05-25 - 2016-06-01.rds")
+ItemAttr_Jun     <- readRDS("Item Attributes_All Stores_2016-06-22 - 2016-07-05.rds")
+
 TransAttr_May     <- readRDS("Transaction Attributes_All Stores_2016-05-25 - 2016-06-01.rds")
 TransAttr_Jun     <- readRDS("Transaction Attributes_All Stores_2016-06-22 - 2016-07-05.rds")
 
-# Filter coupon codes and re-label them with description
-TransItems_May    <- readRDS("Transaction Items_All Stores_2016-05-25 - 2016-06-01.rds") %>% 
-      filter(UPC %in%                   CouponNo_May) %>% 
-      mutate(UPC = factor(UPC, levels = CouponNo_May, labels = CouponDesc_May))
-TransItems_Jun    <- readRDS("Transaction Items_All Stores_2016-06-22 - 2016-07-05.rds") %>% 
-      filter(UPC %in%                   CouponNo_Jun) %>% 
-      mutate(UPC = factor(UPC, levels = CouponNo_Jun, labels = CouponDesc_Jun))
+TransItems_May     <- readRDS("Transaction Items_All Stores_2016-05-25 - 2016-06-01.rds")
+TransItems_Jun     <- readRDS("Transaction Items_All Stores_2016-06-22 - 2016-07-05.rds")
 
-# Flag transaction which particular coupon has been redeemed and count coupons per transaction
-TransAttr_May   <- spread(TransItems_May, UPC, CouponCount) %>% 
+
+# Filter coupon codes and re-label them with description, Flag transaction which particular coupon has been redeemed and count coupons per transaction
+TransAttr_May   <- 
+      #readRDS("Transaction Items_All Stores_2016-05-25 - 2016-06-01.rds") %>% 
+      filter(TransItems_May, UPC %in%   CouponNo_May) %>% 
+      mutate(UPC = factor(UPC, levels = CouponNo_May, labels = CouponDesc_May), CouponCount = 1) %>% 
+      spread(UPC, CouponCount) %>% 
       group_by(TransID) %>% 
       summarize(Coupon_Chips = sum(Coupon_Chips, na.rm = TRUE),
                 Coupon_Steak = sum(Coupon_Steak, na.rm = TRUE),
@@ -524,7 +527,11 @@ TransAttr_May   <- spread(TransItems_May, UPC, CouponCount) %>%
                 Coupon_Water = sum(Coupon_Water, na.rm = TRUE)) %>% 
       join(TransAttr_May, type = "right", by = "TransID") %>% 
       mutate(CouponCount = Coupon_Chips + Coupon_Steak + Coupon_Eggs + Coupon_Water)
-TransAttr_Jun   <- spread(TransItems_Jun, UPC, CouponCount) %>% 
+TransAttr_Jun   <- 
+      #readRDS("Transaction Items_All Stores_2016-06-22 - 2016-07-05.rds") %>% 
+      filter(TransItems_Jun, UPC %in%   CouponNo_Jun) %>% 
+      mutate(UPC = factor(UPC, levels = CouponNo_Jun, labels = CouponDesc_Jun), CouponCount = 1) %>% 
+      spread(UPC, CouponCount) %>% 
       group_by(TransID) %>% 
       summarize(Coupon_Chia   = sum(Coupon_Chia, na.rm = TRUE),
                 Coupon_Salads = sum(Coupon_Salads, na.rm = TRUE),
@@ -532,6 +539,34 @@ TransAttr_Jun   <- spread(TransItems_Jun, UPC, CouponCount) %>%
                 Coupon_Cheese = sum(Coupon_Cheese, na.rm = TRUE)) %>% 
       join(TransAttr_Jun, type = "right", by = "TransID") %>% 
       mutate(CouponCount = Coupon_Chia + Coupon_Salads + Coupon_Dairy + Coupon_Cheese)
+
+ItemAttr_May2 <- filter(           ItemAttr_May,
+                        UPC %in%   CouponNo_May) %>% 
+      mutate(           UPC = factor(UPC,
+                                     levels =   CouponNo_May,
+                                     labels = CouponDesc_May)) %>%
+      group_by(UPC) %>% 
+      summarize(AvgValue    = mean(Sales),
+                CouponCount = n())
+
+ItemAttr_Jun2 <- filter(           ItemAttr_Jun,
+                                   UPC %in%   CouponNo_Jun) %>% 
+      mutate(           UPC = factor(UPC,
+                                     levels =   CouponNo_Jun,
+                                     labels = CouponDesc_Jun)) %>%
+      group_by(UPC) %>% 
+      summarize(AvgValue    = mean(Sales),
+                CouponCount = n())
+
+TransAttr_May2 <- select(TransAttr_May, Store, CouponCount) %>% 
+      group_by(Store) %>% 
+      summarize(CouponCount = sum(CouponCount, na.rm = T))
+
+TransAttr_Jun2 <- select(TransAttr_Jun, Store, CouponCount) %>% 
+      group_by(Store) %>% 
+      summarize(CouponCount = sum(CouponCount, na.rm = T))
+
+cbind(TransAttr_May2, TransAttr_Jun2)
 
 saveRDS(  TransAttr_May, "Transaction Attributes_All Stores_2016-05-25 - 2016-06-01.rds")
 write.csv(TransAttr_May, "Transaction Attributes_All Stores_2016-05-25 - 2016-06-01.csv")
