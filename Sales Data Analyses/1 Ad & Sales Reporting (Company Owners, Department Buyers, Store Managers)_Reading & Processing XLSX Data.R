@@ -6,6 +6,7 @@ library(xlsx)
 library(plyr)
 library(dplyr)
 library(stringr)
+#options(java.parameters = "-Xmx4g" )
 library(XLConnect)
 
 # Disable scientific notation and display UPCs correctly
@@ -22,17 +23,16 @@ options(stringsAsFactors = FALSE)
 # 3) Enable/disable code accordingly at Loop START: Set Week/s
 # 4) Re-run the whole script
 
-setwd("~/Projects/Sales Data Analyses/1 RD/7 Item Movement, Sub-department Sales & Costs")
+setwd("/media/radmin/ExternalHD/Projects/Sales Data Analyses/1 RD/7 Item Movement, Sub-department Sales & Costs")
                  Weeks <- list.files()
                  Weeks <- Weeks[Weeks != "2015-04-01"]
-                 #Weeks <- Weeks[1:43] # Weeks up to Feb. 10, 2016
 
 # STATIC DATA: Doesn't have to be looped over / repeatedly read and saved  #############################################
 
 # 1) DATA IMPORT: SUB-DEPT. List w/ main departments ###################################################################
 # Contains all sub-departments in rows with their particular main department
 
-setwd("~/Projects/Sales Data Analyses/1 RD/1 Sub-department List")
+setwd("/media/radmin/ExternalHD/Projects/Sales Data Analyses/1 RD/1 Sub-department List")
 ## Read data
 Departments <- xlsx::read.xlsx("Sub-department List.xlsx",
                                sheetIndex = 1, startRow = 5,
@@ -59,7 +59,7 @@ Departments <- filter(Departments, !duplicated(Departments))
 
 # 2) DATA IMPORT: ITEM Price List by CATEGORY ##########################################################################
 
-setwd("~/Projects/Sales Data Analyses/1 RD/2 Item Price List by Category")
+setwd("/media/radmin/ExternalHD/Projects/Sales Data Analyses/1 RD/2 Item Price List by Category")
 files             <- list.files()
        FileList   <- list()
 length(FileList)  <- length(files)
@@ -89,7 +89,7 @@ rm(files, FileList)
 # 3) DATA IMPORT: STORE Transaction Count & Sub-department Sales (source is prev. project Univision 2015 project) ######
 
 ## Transaction Count 2014 and first 13 weeks of 2015 (before first reporting week of April 1, 2015)
-setwd("~/Projects/Sales Data Analyses/1 RD/3 Store Customer Counts, Sales by Sub-department & Store 2014-15")
+setwd("/media/radmin/ExternalHD/Projects/Sales Data Analyses/1 RD/3 Store Customer Counts, Sales by Sub-department & Store 2014-15")
 StoreTransCount2014 <- read.csv("Customer Count per Store 2014-15 (weekly).csv", colClasses = c("character")) %>% 
       # Define and select columns
       mutate(Week              = as.Date(Week, format = "%m/%d/%Y"),
@@ -98,7 +98,7 @@ StoreTransCount2014 <- read.csv("Customer Count per Store 2014-15 (weekly).csv",
       select(Week, Store, StoreTransactions)
 
 ## Sales by Sub-department 2014 and first 13 weeks of 2015 (before April 1, 2015)
-setwd("~/Projects/Sales Data Analyses/1 RD/3 Store Customer Counts, Sales by Sub-department & Store 2014-15")
+setwd("/media/radmin/ExternalHD/Projects/Sales Data Analyses/1 RD/3 Store Customer Counts, Sales by Sub-department & Store 2014-15")
 OverallSubDepts2014 <- read.csv("Overall Sales per Store, Sub-, Dept 2014-15 (weekly).csv", colClasses = c("character")) %>% 
       # Define columns and exclude rows with irrelevant sub-departments
       mutate(Store                = factor(Store),
@@ -133,20 +133,20 @@ OverallSubDepts2014 <- filter(OverallSubDepts2014, !duplicated(OverallSubDepts20
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 ## Re-run ALL past weeks
-#for (i in 1:length(Weeks)) {
-#      Week <- as.character(Weeks[i])
+for (i in 1:length(Weeks)) {
+      Week <- as.character(Weeks[i])
       
       ## Run ONE PARTICULAR week (for example, first week: 2015-04-01)
       #Week <- as.character("2015-04-01")
       
       ## Run the MOST RECENT week
-      Week <- Weeks[length(Weeks)]
+      #Week <- Weeks[length(Weeks)]
 
 # 4) DATA IMPORT: AD-ITEM Price List with Cost #########################################################################
 
 # Set folder, then list containing files, and create dataframe list with length that equals the number of files (one dataframe per file)
 # Each folder within the following directories represents one sales week; within the folders, files represent store data
-setwd(paste0("~/Projects/Sales Data Analyses/1 RD/4 Ad-Item Price List with Cost/", Week))
+setwd(paste0("/media/radmin/ExternalHD/Projects/Sales Data Analyses/1 RD/4 Ad-Item Price List with Cost/", Week))
 files             <- list.files()
        FileList   <- list()
 length(FileList)  <- length(files)
@@ -240,7 +240,7 @@ AdItems <- filter(AdItems, !duplicated(AdItems))
 # 5a) DATA IMPORT: ITEM Scans & Costs from FRITO LAY ###################################################################
 
 # Index all Excel files from the folder and list them by name
-setwd("~/Projects/Sales Data Analyses/1 RD/5 Item Scans & Costs/Frito Lay")
+setwd("/media/radmin/ExternalHD/Projects/Sales Data Analyses/1 RD/5 Item Scans & Costs/Frito Lay")
 files <- list.files()
 
 # Create list that in length equals the list of Excel files
@@ -287,7 +287,7 @@ FritoLay <- filter(FritoLay, !duplicated(FritoLay))
 
 # 5b) DATA IMPORT: ITEM Scans & Costs from NABISCO ###################################################################
 
-setwd("~/Projects/Sales Data Analyses/1 RD/5 Item Scans & Costs/Nabisco")
+setwd("/media/radmin/ExternalHD/Projects/Sales Data Analyses/1 RD/5 Item Scans & Costs/Nabisco")
 files             <- list.files()
        FileList   <- list()
 length(FileList)  <- length(files)
@@ -323,7 +323,7 @@ Nabisco <- filter(Nabisco, !duplicated(Nabisco))
 # 5c) DATA IMPORT: ITEM Scans & Costs from CENTRELLA ###################################################################
 
 # Set folder and read containing file
-setwd(paste0("~/Projects/Sales Data Analyses/1 RD/5 Item Scans & Costs/Centrella/", Week))
+setwd(paste0("/media/radmin/ExternalHD/Projects/Sales Data Analyses/1 RD/5 Item Scans & Costs/Centrella/", Week))
 Central                 <- xlsx::read.xlsx(list.files(), sheetIndex = 1,
                                            startRow = 3, colIndex = c(6, 25),
                                            # Excel columns            F, Y
@@ -372,7 +372,7 @@ AdItems$UnitCost[AdItems$Dept == "DELI HOT"]                <- as.numeric(NA)
 
 # Set folder, list its containing files, create dataframe-list with length that equals the number of files
 # Each folder within the following directories represents one sales week; within the folders, files contain store data
-setwd(paste0("~/Projects/Sales Data Analyses/1 RD/6 Store Customer Counts/", Week))
+setwd(paste0("/media/radmin/ExternalHD/Projects/Sales Data Analyses/1 RD/6 Store Customer Counts/", Week))
 files             <- list.files()
        FileList   <- list()
 length(FileList)  <- length(files)
@@ -421,7 +421,7 @@ rm(FileList, files, dat)
 if (Week != "2015-04-01") {
 
 # Load processed data from past weeks
-setwd("~/Projects/Sales Data Analyses/3 PD/1 Ad & Sales Reporting")
+setwd("/media/radmin/ExternalHD/Projects/Sales Data Analyses/3 PD/1 Ad & Sales Reporting")
 StoreTransCountPastWeeks <- read.csv("0 Store Transcount.csv", colClasses = c("character")) %>% 
       # Match column data types
       mutate(Week              = as.Date(Week),
@@ -438,7 +438,7 @@ StoreTransCount <- rbind(StoreTransCount,
 StoreTransCount <- unique(StoreTransCount)
 
 # Save
-setwd("~/Projects/Sales Data Analyses/3 PD/1 Ad & Sales Reporting")
+setwd("/media/radmin/ExternalHD/Projects/Sales Data Analyses/3 PD/1 Ad & Sales Reporting")
 write.csv(StoreTransCount, "0 Store Transcount.csv", row.names = F)
 
 # Aggregate store transaction count to company transaction count
@@ -448,7 +448,7 @@ CompanyTransCount <- as.data.frame(summarize(group_by(StoreTransCount, Week),
 # 7a) DATA IMPORT: ITEM Movement & SUB-DEPT. Sales & Costs #############################################################
 # Set folder, list containing files, create two dataframe-list with length that equals the number of files
 # Each folder within the following directories represents one sales week; within the folders, files contain store data
-setwd(paste0("~/Projects/Sales Data Analyses/1 RD/7 Item Movement, Sub-department Sales & Costs/", Week))
+setwd(paste0("/media/radmin/ExternalHD/Projects/Sales Data Analyses/1 RD/7 Item Movement, Sub-department Sales & Costs/", Week))
 files             <- list.files()
 
 # 1st dataframe-list for overall item movement
@@ -546,7 +546,7 @@ OverallItemMovement_MMM$PriceType                                           <- f
 OverallItemMovement_MMM <- filter(OverallItemMovement_MMM, !duplicated(OverallItemMovement_MMM))
 
 # Subset item-movement data by (sub-)department and save as CSV file of manageable size to be read into TABLEAU visualizaton program
-setwd("~/Projects/Sales Data Analyses/3 PD/2 Marketing Mix Models")
+setwd("/media/radmin/ExternalHD/Projects/Sales Data Analyses/3 PD/2 Marketing Mix Models")
 
 # Skip reading data from the PAST week if the currently processed week is the very FIRST week
 if (Week != "2015-04-01") {
@@ -675,7 +675,7 @@ OverallSubDepts <- filter(OverallSubDepts, !duplicated(OverallSubDepts))
 if (Week != "2015-04-01") {
       
 # Load processed data from past weeks
-setwd("~/Projects/Sales Data Analyses/3 PD/1 Ad & Sales Reporting")
+setwd("/media/radmin/ExternalHD/Projects/Sales Data Analyses/3 PD/1 Ad & Sales Reporting")
 OverallSubDeptsPastWeeks <- read.csv("0 Overall Sub-Depts.csv", colClasses = c("character")) %>% 
       # Define columns exactly as they are defined before
       mutate(Week                 = as.Date(Week),
@@ -698,7 +698,7 @@ OverallSubDepts <- rbind(OverallSubDepts,
 OverallSubDepts <- unique(OverallSubDepts)
 
 # Save
-setwd("~/Projects/Sales Data Analyses/3 PD/1 Ad & Sales Reporting")
+setwd("/media/radmin/ExternalHD/Projects/Sales Data Analyses/3 PD/1 Ad & Sales Reporting")
 write.csv(OverallSubDepts, "0 Overall Sub-Depts.csv", row.names = F)
 
 # 9) DATA PROCESSING: SUB-DEPT Sales & Costs (Aggregations) ############################################################
@@ -767,7 +767,7 @@ if (Week != "2015-04-01") {
 ## Bind past weeks with current week (Ad Items)
 
 # Load processed data from past weeks
-setwd("~/Projects/Sales Data Analyses/3 PD/1 Ad & Sales Reporting")
+setwd("/media/radmin/ExternalHD/Projects/Sales Data Analyses/3 PD/1 Ad & Sales Reporting")
 AdItemsPastWeeks <- read.csv("0 Ad Items.csv", colClasses = c("character")) %>% 
       # Define columns exactly as they are defined before
       mutate(Week         = as.Date(Week),
@@ -797,7 +797,7 @@ AdItems <- rbind(AdItems,
 AdItems <- unique(AdItems)
 
 # Save
-setwd("~/Projects/Sales Data Analyses/3 PD/1 Ad & Sales Reporting")
+setwd("/media/radmin/ExternalHD/Projects/Sales Data Analyses/3 PD/1 Ad & Sales Reporting")
 write.csv(AdItems, "0 Ad Items.csv", row.names = F)
 
 # 10b) 2  Sub-departments ##############################################################################################
@@ -818,7 +818,7 @@ SubDepts <- as.data.frame(summarize(group_by(AdItems, Week, #Ad,
 
 SubDepts$SubDeptAdCosts[SubDepts$Dept == "DELI HOT"] <- as.numeric(NA)
 
-setwd("~/Projects/Sales Data Analyses/3 PD/1 Ad & Sales Reporting")
+setwd("/media/radmin/ExternalHD/Projects/Sales Data Analyses/3 PD/1 Ad & Sales Reporting")
 write.csv(SubDepts, "2 Sub-departments.csv", row.names = F)
 
 # 10c) 2  Sub-departments (ACROSS Stores) ###############################################################################
@@ -838,7 +838,7 @@ SubDepts2 <- as.data.frame(summarize(group_by(AdItems, Week, Dept, SubDept),
 
 SubDepts2$SubDeptAdCosts[SubDepts2$Dept == "DELI HOT"] <- as.numeric(NA)
 
-setwd("~/Projects/Sales Data Analyses/3 PD/1 Ad & Sales Reporting")
+setwd("/media/radmin/ExternalHD/Projects/Sales Data Analyses/3 PD/1 Ad & Sales Reporting")
 write.csv(SubDepts2, "2 Sub-departments (ACROSS Stores).csv", row.names = F)
 
 # 10d) 3 Departments ####################################################################################################
@@ -858,7 +858,7 @@ Depts <- as.data.frame(summarize(group_by(AdItems, Week, Store, Dept),
 
 Depts$DeptAdCosts[Depts$Dept == "DELI HOT"] <- as.numeric(NA)
 
-setwd("~/Projects/Sales Data Analyses/3 PD/1 Ad & Sales Reporting")
+setwd("/media/radmin/ExternalHD/Projects/Sales Data Analyses/3 PD/1 Ad & Sales Reporting")
 write.csv(Depts, "3 Departments.csv", row.names = F)
 
 # 10e) 3 Departments (ACROSS Stores) ####################################################################################
@@ -877,7 +877,7 @@ Depts2 <- as.data.frame(summarize(group_by(AdItems, Week, Dept),
 
 Depts2$DeptAdCosts[Depts2$Dept == "DELI HOT"] <- as.numeric(NA)
 
-setwd("~/Projects/Sales Data Analyses/3 PD/1 Ad & Sales Reporting")
+setwd("/media/radmin/ExternalHD/Projects/Sales Data Analyses/3 PD/1 Ad & Sales Reporting")
 write.csv(Depts2, "3 Departments (ACROSS Stores).csv", row.names = F)
 
 # 10f) 4 Stores #########################################################################################################
@@ -895,7 +895,7 @@ Stores <- as.data.frame(summarize(group_by(subset(AdItems, Dept != "DELI HOT"), 
              StoreAdSalesShare  = StoreAdSales/StoreOverallSales,
              StoreAdProfitShare = StoreAdProfit/StoreOverallProfit)
 
-setwd("~/Projects/Sales Data Analyses/3 PD/1 Ad & Sales Reporting")
+setwd("/media/radmin/ExternalHD/Projects/Sales Data Analyses/3 PD/1 Ad & Sales Reporting")
 write.csv(Stores, "4 Stores.csv", row.names = F)
 
 # 10g) 5 Company #######################################################################################################
@@ -912,7 +912,7 @@ Company <- as.data.frame(summarize(group_by(AdItems, Week),
              CompanyAdSalesShare  = CompanyAdSales/CompanyOverallSales,
              CompanyAdProfitShare = CompanyAdProfit/CompanyOverallProfit)
 
-setwd("~/Projects/Sales Data Analyses/3 PD/1 Ad & Sales Reporting")
+setwd("/media/radmin/ExternalHD/Projects/Sales Data Analyses/3 PD/1 Ad & Sales Reporting")
 write.csv(Company, "5 Company.csv", row.names = F)
 
 # 11) Finish ###########################################################################################################
@@ -928,4 +928,4 @@ write.csv(Company, "5 Company.csv", row.names = F)
 
 }
 
-#print(paste("Process ended: ", Sys.time()))
+print(paste("Process ended: ", Sys.time()))
