@@ -133,14 +133,14 @@ OverallSubDepts2014 <- filter(OverallSubDepts2014, !duplicated(OverallSubDepts20
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 ## Re-run ALL past weeks
-for (i in 1:length(Weeks)) {
-      Week <- as.character(Weeks[i])
+#for (i in 1:length(Weeks)) {
+      #Week <- as.character(Weeks[i])
       
       ## Run ONE PARTICULAR week (for example, first week: 2015-04-01)
       #Week <- as.character("2015-04-01")
       
       ## Run the MOST RECENT week
-      #Week <- Weeks[length(Weeks)]
+      Week <- Weeks[length(Weeks)]
 
 # 4) DATA IMPORT: AD-ITEM Price List with Cost #########################################################################
 
@@ -472,15 +472,15 @@ for (o in 1:length(files)) {
       FileList1[[o]]                <- cbind(dat[2,2],                           # Week in the header
       # Excel cell                               B 2
                                              substring(dat[nrow(dat),1], 22),    # Store in the footer (last row of document)
-                                             dat[,c(1:3, 6:7)])                  # UPC, Product, Sub-Dept, Movement, Sales
-      # Excel columns                               A:C, G:H
+                                             dat[,c(1:3, 6:8)])                  # UPC, Product, Sub-Dept, Movement, Sales, Costs
+      # Excel columns                               A:C, G:I
       # 5th column E in Excel report is enitrely empty and, therefore, skipped by reading function
       # Empty column shifts following columns: Excel columns G:H are dataframe columns 6:7
       
       # Name columns
       colnames(FileList1[[o]])      <- c("Week",                                            # B2
                                          "Store",                                           # Foother
-                                         "UPC", "Product", "SubDept", "UnitsSold", "Sales") # A:C, G:H
+                                         "UPC", "Product", "SubDept", "UnitsSold", "Sales", "Costs") # A:C, G:I
       
       ## SUB-DEPT. Sales & Costs
       
@@ -514,14 +514,17 @@ rm(FileList1, FileList2, files, dat)
 
 # Collapse elements/dataframes of the list into one dataframe
 OverallItemMovement_MMM <- mutate(OverallItemMovement,
-                                   Week      = as.Date(as.character(Week), format = "%m/%d/%Y"),
-                                   Store     = factor(as.character(Store),
-                                                      levels = c("5724 KEDZIE", "4700 KEDZIE", "4343 PULASKI", "5838 PULASKI", "118TH ST", "2526 CERMAK", "7 SIBLEY", "3720 W", "OAK BROOK TERRACE", "MADISON", "BRIDGEVIEW", "OAK PARK"),
-                                                      labels = c("1",           "2",           "3",            "4",            "5",        "6",           "7",        "8",      "9",                 "10",      "11",         "12")),
-                                   UPC       = suppressWarnings(as.numeric(UPC)),
-                                   UnitsSold = round(suppressWarnings(as.numeric(UnitsSold)), 2),
-                                   Sales     = round(suppressWarnings(as.numeric(Sales)), 2),
-                                   AvgPrice  = round(Sales/UnitsSold, 2)) %>%
+                                  Week        = as.Date(as.character(Week), format = "%m/%d/%Y"),
+                                  Store       = factor(as.character(Store),
+                                                     levels = c("5724 KEDZIE", "4700 KEDZIE", "4343 PULASKI", "5838 PULASKI", "118TH ST", "2526 CERMAK", "7 SIBLEY", "3720 W", "OAK BROOK TERRACE", "MADISON", "BRIDGEVIEW", "OAK PARK"),
+                                                     labels = c("1",           "2",           "3",            "4",            "5",        "6",           "7",        "8",      "9",                 "10",      "11",         "12")),
+                                  UPC         = suppressWarnings(as.numeric(UPC)),
+                                  UnitsSold   = round(suppressWarnings(as.numeric(UnitsSold)), 2),
+                                  Sales       = round(suppressWarnings(as.numeric(Sales)), 2),
+                                  Costs       = round(suppressWarnings(as.numeric(Costs)), 2),
+                                  AvgPrice    = round(Sales/UnitsSold, 2),
+                                  AvgUnitCost = round(Costs/UnitsSold, 2)
+                                  ) %>%
       # Select data "signal", rows with product information indicated by UPC and; Filter out rows with "data noise" such as titles, footers, page breaks, etc. (coerced to NAs) 
       filter(!is.na(UPC)) %>%
       # Join sub-department and ad-item data and weave in additional columns
@@ -535,7 +538,9 @@ OverallItemMovement_MMM <- mutate(OverallItemMovement,
              Dept, SubDept,                    # sub-department list
              UPC, Product,
              PriceType, PriceLabel, UnitPrice, # ad-item information
-             AvgPrice, Sales, UnitsSold) %>% 
+             UnitsSold,
+             AvgPrice, Sales,
+             AvgUnitCost,  Costs) %>% 
       mutate(PriceType = as.character(PriceType))
 
 # Label all items that were not included in the ad-item list accordingly
