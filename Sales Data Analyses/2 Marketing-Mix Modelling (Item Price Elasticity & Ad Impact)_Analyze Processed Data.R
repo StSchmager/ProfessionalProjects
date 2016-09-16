@@ -6,6 +6,7 @@ library(dplyr)
 library(ggplot2)
 library(xlsx)
 library(tidyr)
+library(grid)
 
 ## 1) Read & Process Data ##############################################################################################
 
@@ -178,15 +179,16 @@ data1 <- filter(data0,
       # Add product descriptions, and like codes
       left_join(Products_UPC, by = "UPC")
 
-## 3) Build regression models ###########################################################################################
+## 3) Regression Analysis ##############################################################################################
 
+## 3a) Prepare input data ##############################################################################################
 # Run regression per item
-SelectedProducts        <- data1$UPC[1:10]
+SelectedProducts        <- data1$UPC[1:50]
         ProductList     <- list()
  length(ProductList)    <- length(SelectedProducts)
 
 for (i in 1:length(SelectedProducts)) {
-SelectedProduct <- SelectedProducts[3]
+SelectedProduct <- SelectedProducts[i] # SelectedProduct <- data1$UPC[data1$UPC==""]
  
       data2 <- ungroup(data0) %>% 
             filter(UPC    ==   SelectedProduct,
@@ -203,231 +205,330 @@ SelectedProduct <- SelectedProducts[3]
             left_join(select(data1,       UPC, AvgWeeklyUnitCost),
                                     by = "UPC")
       # Calculate std. deviation for price variable and total ad features (both filter criteria for models)
-      results$StdWeeklyUnitPriceDev <- round(sd(data2$AvgWeeklyUnitPrice), 2)
-      results$TotalAdFeat_abs       <- sum(as.numeric(as.character(factor(data2$AdFeature,
-                                                                levels = c("NON-SALE", "SALE"),
-                                                                labels = c("0",        "1")))), na.rm = T)
-      results$TotalAdFeat_rel       <- round(results$TotalAdFeat_abs/SelectedWeeks_TotalAdWeeks, 4)
+      results$StdWeeklyUnitPriceDev             <- round(sd(data2$AvgWeeklyUnitPrice), 2)
+      results$StdWeeklyUnitPriceDev_Ad    <- round(sd(data2$AvgWeeklyUnitPrice[data2$AdFeature == "SALE"]),     2)
+      results$StdWeeklyUnitPriceDev_Ad[
+is.na(results$StdWeeklyUnitPriceDev_Ad)]  <- 0
+      results$StdWeeklyUnitPriceDev_NoAd  <- round(sd(data2$AvgWeeklyUnitPrice[data2$AdFeature == "NON-SALE"]), 2)
+      results$StdWeeklyUnitPriceDev_NoAd[
+is.na(results$StdWeeklyUnitPriceDev_NoAd)]  <- 0
       
-      ## Build various models
+      results$TotalAdFeat_abs             <- sum(as.numeric(as.character(factor(data2$AdFeature,
+                                                                                levels = c("NON-SALE", "SALE"),
+                                                                                labels = c("0",        "1")))), na.rm = T)
+      results$TotalAdFeat_rel             <- round(results$TotalAdFeat_abs/SelectedWeeks_TotalAdWeeks, 4)
       
-      lm_Base     <- lm(data = data2, AvgDailyUnitSales  ~ 1) # !!! lm_Price2 yields the same results !!!
+      ## 3b) Build models ##############################################################################################
       
-      lm_Price0   <- lm(data = data2,                      AvgWeeklyUnitPrice ~ 1)
-      lm_Price    <- lm(data = data2, AvgDailyUnitSales  ~ AvgWeeklyUnitPrice)
-      lm_Price2   <- lm(data = data2, AvgDailyUnitSales  ~ AvgWeeklyUnitPrice_centered)
+      lm0_Base          <- lm(data = data2, AvgDailyUnitSales  ~ 1) # !!! lm1a_Price2 yields the same results !!!
+      
+      lm0_Price         <- lm(data = data2,                      AvgWeeklyUnitPrice ~ 1)
+      lm1a_Price        <- lm(data = data2, AvgDailyUnitSales  ~ AvgWeeklyUnitPrice)
+      lm1a_Price2       <- lm(data = data2, AvgDailyUnitSales  ~ AvgWeeklyUnitPrice_centered)
       
       # If product was featured in ad at least once then build models that include ad-feature variable
       if (results$TotalAdFeat_abs > 0) { 
       
-      lm_PriceAd0 <- lm(data = data2,                      AvgWeeklyUnitPrice          ~ AdFeature)
-      lm_Ad       <- lm(data = data2, AvgDailyUnitSales  ~                               AdFeature)
-      lm_PriceAd  <- lm(data = data2, AvgDailyUnitSales  ~ AvgWeeklyUnitPrice          + AdFeature)
-      lm_PriceAd2 <- lm(data = data2, AvgDailyUnitSales  ~ AvgWeeklyUnitPrice_centered + AdFeature)
+      lm0_PriceAd       <- lm(data = data2,                      AvgWeeklyUnitPrice          ~ AdFeature)
+      lm1b_Ad           <- lm(data = data2, AvgDailyUnitSales  ~                               AdFeature)
+      
+      lm2_PriceAd       <- lm(data = data2, AvgDailyUnitSales  ~ AvgWeeklyUnitPrice          + AdFeature)
+      lm2_PriceAd2      <- lm(data = data2, AvgDailyUnitSales  ~ AvgWeeklyUnitPrice_centered + AdFeature)
       
       }
       
-      ## Save coefficients and significance levels
+      ## 3c) Diagnose models ###########################################################################################
       
-      results$AvgDailyUnitSales                       <- round(summary(lm_Base)$coefficients[1, 1], 2) # !!! lm_Price2 yields the same results !!!
-      results$AvgDailyUnitSales_Sig                   <- round(summary(lm_Base)$coefficients[1, 4], 4)
+      #resid(fit)
+      #summary(fit)$sigma # Finding residual variance estimates.
+      #sqrt(sum(resid(fit)^2) / (n - 2)) # Directly calculating from the residuals
       
-      results$AvgWeeklyUnitPrice                      <- round(summary(lm_Price0)$coefficients[1, 1], 2)
-      results$AvgWeeklyUnitPrice_Sig                  <- round(summary(lm_Price0)$coefficients[1, 4], 4)
+      #anova(lm0_Base,
+      #      lm1b_Ad,
+      #      lm1a_Price,   lm1a_Price2,
+      #      lm2_PriceAd, lm2_PriceAd2)
+      
+      ## 3d) Save regression coefficients, significance values, model fit ##############################################
+      
+      results$AvgDailyUnitSales                                   <- round(summary(lm0_Base)$coefficients[1, 1], 2)     # !!! lm1a_Price2 yields the same results !!!
+      results$AvgDailyUnitSales_Sig                               <- round(summary(lm0_Base)$coefficients[1, 4], 4)
+      
+      results$AvgWeeklyUnitPrice                                  <- round(summary(lm0_Price)$coefficients[1, 1], 2)
+      results$AvgWeeklyUnitPrice_Sig                              <- round(summary(lm0_Price)$coefficients[1, 4], 4)
       
       # If product has changed in price, models were built sensefully and coefficients can be saved
       if (results$StdWeeklyUnitPriceDev > 0) { 
       
-      results$RSq_Price                               <- round(summary(lm_Price)$r.squared, 3)
-      results$AdjRSq_Price                            <- round(summary(lm_Price)$adj.r.squared, 3) 
-      results$AvgDailyUnitSales_ZeroPrice             <- round(summary(lm_Price)$coefficients[1, 1], 2)
-      results$AvgDailyUnitSales_ZeroPrice_Sig         <- round(summary(lm_Price)$coefficients[1, 4], 4)
-      results$AvgDailyUnitSales_PriceElasNotAdAdj     <- round(summary(lm_Price)$coefficients[2, 1], 2)
-      results$AvgDailyUnitSales_PriceElasNotAdAdj_Sig <- round(summary(lm_Price)$coefficients[2, 4], 4)
+      results$lm1a_RSq_Price                                      <- round(summary(lm1a_Price)$r.squared, 3)
+      results$lm1a_AdjRSq_Price                                   <- round(summary(lm1a_Price)$adj.r.squared, 3) 
+      results$lm1a_a_AvgDailyUnitSales_ZeroPrice                  <- round(summary(lm1a_Price)$coefficients[1, 1], 2)
+      results$lm1a_a_AvgDailyUnitSales_ZeroPrice_Sig              <- round(summary(lm1a_Price)$coefficients[1, 4], 4)
+      results$lm1a_b_AvgDailyUnitSales_PriceElasNotAdAdj          <- round(summary(lm1a_Price)$coefficients[2, 1], 2)
+      results$lm1a_b_AvgDailyUnitSales_PriceElasNotAdAdj_Sig      <- round(summary(lm1a_Price)$coefficients[2, 4], 4)
       
-      results$RSq_Price2                              <- round(summary(lm_Price2)$r.squared, 3)          # !!! Replicates results from lm_Price !!!
-      results$AdjRSq_Price2                           <- round(summary(lm_Price2)$adj.r.squared, 3)      # !!! Replicates results from lm_Price !!!
-      results$AvgDailyUnitSales_AvgPrice              <- round(summary(lm_Price2)$coefficients[1, 1], 2) # !!! Replicates results from lm_Base !!!
-      results$AvgDailyUnitSales_AvgPrice_Sig          <- round(summary(lm_Price2)$coefficients[1, 4], 4)
-      results$AvgDailyUnitSales_PriceElasNotAdAdj     <- round(summary(lm_Price2)$coefficients[2, 1], 2) # !!! Replicates results from lm_Price !!!
-      results$AvgDailyUnitSales_PriceElasNotAdAdj_Sig <- round(summary(lm_Price2)$coefficients[2, 4], 4)
+      results$lm1a_RSq_Price2                                     <- round(summary(lm1a_Price2)$r.squared, 3)           # !!! Replicates results from lm1a_Price !!!
+      results$lm1a_AdjRSq_Price2                                  <- round(summary(lm1a_Price2)$adj.r.squared, 3)       # !!! Replicates results from lm1a_Price !!!
+      results$lm1a_a_AvgDailyUnitSales_AvgPrice                   <- round(summary(lm1a_Price2)$coefficients[1, 1], 2)  # !!! Replicates results from lm0_Base !!!
+      results$lm1a_a_AvgDailyUnitSales_AvgPrice_Sig               <- round(summary(lm1a_Price2)$coefficients[1, 4], 4)  # !!! Replicates results from lm0_Base !!!
+      results$lm1a_b_AvgDailyUnitSales_PriceElasNotAdAdj          <- round(summary(lm1a_Price2)$coefficients[2, 1], 2)  # !!! Replicates results from lm1a_Price !!!
+      results$lm1a_b_AvgDailyUnitSales_PriceElasNotAdAdj_Sig      <- round(summary(lm1a_Price2)$coefficients[2, 4], 4)  # !!! Replicates results from lm1a_Price !!!
       
       # If product has NOT changed in price, models were built NOT sensefully and coefficients should be NA
       } else {
             
-      results$RSq_Price                               <- NA
-      results$AdjRSq_Price                            <- NA
-      results$AvgDailyUnitSales_ZeroPrice             <- NA
-      results$AvgDailyUnitSales_ZeroPrice_Sig         <- NA
-      results$AvgDailyUnitSales_PriceElasNotAdAdj     <- NA
-      results$AvgDailyUnitSales_PriceElasNotAdAdj_Sig <- NA
+      results$lm1a_RSq_Price                                      <- NA
+      results$lm1a_AdjRSq_Price                                   <- NA
+      results$lm1a_a_AvgDailyUnitSales_ZeroPrice                  <- NA
+      results$lm1a_a_AvgDailyUnitSales_ZeroPrice_Sig              <- NA
+      results$lm1a_b_AvgDailyUnitSales_PriceElasNotAdAdj          <- NA
+      results$lm1a_b_AvgDailyUnitSales_PriceElasNotAdAdj_Sig      <- NA
             
-      results$RSq_Price2                              <- NA
-      results$AdjRSq_Price2                           <- NA
-      results$AvgDailyUnitSales_AvgPrice              <- NA
-      results$AvgDailyUnitSales_AvgPrice_Sig          <- NA
-      results$AvgDailyUnitSales_PriceElasNotAdAdj     <- NA
-      results$AvgDailyUnitSales_PriceElasNotAdAdj_Sig <- NA
+      results$lm1a_RSq_Price2                                     <- NA
+      results$lm1a_AdjRSq_Price2                                  <- NA
+      results$lm1a_a_AvgDailyUnitSales_AvgPrice                   <- NA
+      results$lm1a_a_AvgDailyUnitSales_AvgPrice_Sig               <- NA
+      results$lm1a_b_AvgDailyUnitSales_PriceElasNotAdAdj          <- NA
+      results$lm1a_b_AvgDailyUnitSales_PriceElasNotAdAdj_Sig      <- NA
                   
       }
       
       # If product was featured in ad at least once then models were built and coefficients can be saved
       if (results$TotalAdFeat_abs > 0) { 
       
-      results$PriceAdCorr                             <- round(summary(lm_PriceAd0)$r.squared, 3)
-      results$PriceAdCorrAdj                          <- round(summary(lm_PriceAd0)$adj.r.squared, 3)
-      results$AvgWeeklyUnitPrice_NoAd                 <- round(summary(lm_PriceAd0)$coefficients[1, 1], 2)
-      results$AvgWeeklyUnitPrice_NoAd_Sig             <- round(summary(lm_PriceAd0)$coefficients[1, 4], 4)
-      results$AvgWeeklyUnitPrice_Ad                   <- round(summary(lm_PriceAd0)$coefficients[2, 1], 2) + results$AvgWeeklyUnitPrice_NoAd
-      results$AvgWeeklyUnitPrice_Ad_Sig               <- round(summary(lm_PriceAd0)$coefficients[2, 4], 4)      
+      results$lm0_RSq_PriceAdCorr                                 <- round(summary(lm0_PriceAd)$r.squared, 3)
+      results$lm0_AdjRSq_PriceAdCorrAdj                           <- round(summary(lm0_PriceAd)$adj.r.squared, 3)
+      results$lm0_a_AvgWeeklyUnitPrice_NoAd                       <- round(summary(lm0_PriceAd)$coefficients[1, 1], 2)
+      results$lm0_a_AvgWeeklyUnitPrice_NoAd_Sig                   <- round(summary(lm0_PriceAd)$coefficients[1, 4], 4)
+      results$lm0_b_AvgWeeklyUnitPrice_Ad                         <- round(summary(lm0_PriceAd)$coefficients[2, 1], 2)  + results$lm0_a_AvgWeeklyUnitPrice_NoAd
+      results$lm0_b_AvgWeeklyUnitPrice_Ad_Sig                     <- round(summary(lm0_PriceAd)$coefficients[2, 4], 4)      
             
-      results$RSq_Ad                                  <- round(summary(lm_Ad)$r.squared, 3)
-      results$AdjRSq_Ad                               <- round(summary(lm_Ad)$adj.r.squared, 3) 
-      results$AvgDailyUnitSales_NoAd                  <- round(summary(lm_Ad)$coefficients[1, 1], 2)
-      results$AvgDailyUnitSales_NoAd_Sig              <- round(summary(lm_Ad)$coefficients[1, 4], 4)
-      results$AvgDailyUnitSales_Ad                    <- round(summary(lm_Ad)$coefficients[2, 1], 2)       + results$AvgDailyUnitSales_NoAd
-      results$AvgDailyUnitSales_AdLiftNotPrAdj        <- round(summary(lm_Ad)$coefficients[2, 1], 2)       / results$AvgDailyUnitSales_NoAd
-      results$AvgDailyUnitSales_Ad_Sig                <- round(summary(lm_Ad)$coefficients[2, 4], 4)
+      results$lm1b_RSq_Ad                                         <- round(summary(lm1b_Ad)$r.squared, 3)
+      results$lm1b_AdjRSq_Ad                                      <- round(summary(lm1b_Ad)$adj.r.squared, 3) 
+      results$lm1b_a_AvgDailyUnitSales_NoAdNotPrAdj               <- round(summary(lm1b_Ad)$coefficients[1, 1], 2)
+      results$lm1b_a_AvgDailyUnitSales_NoAdNotPrAdj_Sig           <- round(summary(lm1b_Ad)$coefficients[1, 4], 4)
+      results$lm1b_b_AvgDailyUnitSales_AdNotPrAdj                 <- round(summary(lm1b_Ad)$coefficients[2, 1], 2)      + results$lm1b_a_AvgDailyUnitSales_NoAdNotPrAdj
+      results$lm1b_b_AvgDailyUnitSales_AdLiftNotPrAdj             <- round(summary(lm1b_Ad)$coefficients[2, 1], 2)      / results$lm1b_a_AvgDailyUnitSales_NoAdNotPrAdj
+      results$lm1b_b_AvgDailyUnitSales_AdNotPrAdj_Sig             <- round(summary(lm1b_Ad)$coefficients[2, 4], 4)
       
-      results$RSq_PriceAd                             <- round(summary(lm_PriceAd)$r.squared, 3)
-      results$AdjRSq_PriceAd                          <- round(summary(lm_PriceAd)$adj.r.squared, 3) 
-      results$AvgDailyUnitSales_ZeroPrice_NoAd        <- round(summary(lm_PriceAd)$coefficients[1, 1], 2)
-      results$AvgDailyUnitSales_ZeroPrice_NoAd_Sig    <- round(summary(lm_PriceAd)$coefficients[1, 4], 4)
-      results$AvgDailyUnitSales_PriceElasAdAdj        <- round(summary(lm_PriceAd)$coefficients[2, 1], 2)
-      results$AvgDailyUnitSales_PriceElasAdAdj_Sig    <- round(summary(lm_PriceAd)$coefficients[2, 4], 4)
-      results$AvgDailyUnitSales_ZeroPrice_Ad          <- round(summary(lm_PriceAd)$coefficients[3, 1], 2) + results$AvgDailyUnitSales_ZeroPrice_NoAd
-      results$AvgDailyUnitSales_ZeroPrice_AdLiftPrAdj <- round(summary(lm_PriceAd)$coefficients[3, 1], 2) / results$AvgDailyUnitSales_ZeroPrice_NoAd
-      results$AvgDailyUnitSales_ZeroPrice_Ad_Sig      <- round(summary(lm_PriceAd)$coefficients[3, 4], 4)
+      # If product has NOT changed in price while on/off the ad, models were built NOT sensefully and coefficients should be NA
+      if (results$StdWeeklyUnitPriceDev_Ad > 0) {
       
-      results$RSq_PriceAd2                            <- round(summary(lm_PriceAd2)$r.squared, 3)          # !!! Replicates results from lm_PriceAd !!!
-      results$AdjRSq_PriceAd2                         <- round(summary(lm_PriceAd2)$adj.r.squared, 3) 
-      results$AvgDailyUnitSales_AvgPrice_NoAd         <- round(summary(lm_PriceAd2)$coefficients[1, 1], 2)
-      results$AvgDailyUnitSales_AvgPrice_NoAd_Sig     <- round(summary(lm_PriceAd2)$coefficients[1, 4], 4)
-      results$AvgDailyUnitSales_PriceElasAdAdj        <- round(summary(lm_PriceAd2)$coefficients[2, 1], 2) # !!! Replicates results from lm_PriceAd !!!
-      results$AvgDailyUnitSales_PriceElasAdAdj_Sig    <- round(summary(lm_PriceAd2)$coefficients[2, 4], 4)
-      results$AvgDailyUnitSales_AvgPrice_Ad           <- round(summary(lm_PriceAd2)$coefficients[3, 1], 2) + results$AvgDailyUnitSales_AvgPrice_NoAd
-      results$AvgDailyUnitSales_AvgPrice_AdLiftPrAdj  <- round(summary(lm_PriceAd2)$coefficients[3, 1], 2) / results$AvgDailyUnitSales_AvgPrice_NoAd
-      results$AvgDailyUnitSales_AvgPrice_Ad_Sig       <- round(summary(lm_PriceAd2)$coefficients[3, 4], 4)
+      results$lm2_RSq_PriceAd                                     <- round(summary(lm2_PriceAd)$r.squared, 3)
+      results$lm2_AdjRSq_PriceAd                                  <- round(summary(lm2_PriceAd)$adj.r.squared, 3) 
+      results$lm2_a_AvgDailyUnitSales_ZeroPrice_NoAd              <- round(summary(lm2_PriceAd)$coefficients[1, 1], 2)
+      results$lm2_a_AvgDailyUnitSales_ZeroPrice_NoAd_Sig          <- round(summary(lm2_PriceAd)$coefficients[1, 4], 4)
+      results$lm2_b_AvgDailyUnitSales_PriceElasAdAdj              <- round(summary(lm2_PriceAd)$coefficients[2, 1], 2)
+      results$lm2_b_AvgDailyUnitSales_PriceElasAdAdj_Sig          <- round(summary(lm2_PriceAd)$coefficients[2, 4], 4)
+      results$lm2_c_AvgDailyUnitSales_ZeroPrice_Ad                <- round(summary(lm2_PriceAd)$coefficients[3, 1], 2)  + results$lm2_a_AvgDailyUnitSales_ZeroPrice_NoAd
+      results$lm2_c_AvgDailyUnitSales_ZeroPrice_AdLiftPrAdj       <- round(summary(lm2_PriceAd)$coefficients[3, 1], 2)  / results$lm2_a_AvgDailyUnitSales_ZeroPrice_NoAd
+      results$lm2_c_AvgDailyUnitSales_ZeroPrice_Ad_Sig            <- round(summary(lm2_PriceAd)$coefficients[3, 4], 4)
+      
+      results$lm2_RSq_PriceAd2                                    <- round(summary(lm2_PriceAd2)$r.squared, 3)          # !!! Replicates results from lm2_PriceAd !!!
+      results$lm2_AdjRSq_PriceAd2                                 <- round(summary(lm2_PriceAd2)$adj.r.squared, 3) 
+      results$lm2_a_AvgDailyUnitSales_AvgPrice_NoAd               <- round(summary(lm2_PriceAd2)$coefficients[1, 1], 2)
+      results$lm2_a_AvgDailyUnitSales_AvgPrice_NoAd_Sig           <- round(summary(lm2_PriceAd2)$coefficients[1, 4], 4)
+      results$lm2_b_AvgDailyUnitSales_PriceElasAdAdj              <- round(summary(lm2_PriceAd2)$coefficients[2, 1], 2) # !!! Replicates results from lm2_PriceAd !!!
+      results$lm2_b_AvgDailyUnitSales_PriceElasAdAdj_Sig          <- round(summary(lm2_PriceAd2)$coefficients[2, 4], 4)
+      results$lm2_c_AvgDailyUnitSales_AvgPrice_Ad                 <- round(summary(lm2_PriceAd2)$coefficients[3, 1], 2) + results$lm2_a_AvgDailyUnitSales_AvgPrice_NoAd
+      results$lm2_c_AvgDailyUnitSales_AvgPrice_AdLiftPrAdj        <- round(summary(lm2_PriceAd2)$coefficients[3, 1], 2) / results$lm2_a_AvgDailyUnitSales_AvgPrice_NoAd
+      results$lm2_c_AvgDailyUnitSales_AvgPrice_Ad_Sig             <- round(summary(lm2_PriceAd2)$coefficients[3, 4], 4)
+      
+      } else {
+            
+            results$lm2_RSq_PriceAd                                     <- round(summary(lm2_PriceAd)$r.squared, 3)
+            results$lm2_AdjRSq_PriceAd                                  <- round(summary(lm2_PriceAd)$adj.r.squared, 3) 
+            results$lm2_a_AvgDailyUnitSales_ZeroPrice_NoAd              <- round(summary(lm2_PriceAd)$coefficients[1, 1], 2)
+            results$lm2_a_AvgDailyUnitSales_ZeroPrice_NoAd_Sig          <- round(summary(lm2_PriceAd)$coefficients[1, 4], 4)
+            results$lm2_b_AvgDailyUnitSales_PriceElasAdAdj              <- round(summary(lm2_PriceAd)$coefficients[2, 1], 2)
+            results$lm2_b_AvgDailyUnitSales_PriceElasAdAdj_Sig          <- round(summary(lm2_PriceAd)$coefficients[2, 4], 4)
+            results$lm2_c_AvgDailyUnitSales_ZeroPrice_Ad                <- NA
+            results$lm2_c_AvgDailyUnitSales_ZeroPrice_AdLiftPrAdj       <- NA
+            results$lm2_c_AvgDailyUnitSales_ZeroPrice_Ad_Sig            <- NA
+            
+            results$lm2_RSq_PriceAd2                                    <- round(summary(lm2_PriceAd2)$r.squared, 3)          # !!! Replicates results from lm2_PriceAd !!!
+            results$lm2_AdjRSq_PriceAd2                                 <- round(summary(lm2_PriceAd2)$adj.r.squared, 3) 
+            results$lm2_a_AvgDailyUnitSales_AvgPrice_NoAd               <- round(summary(lm2_PriceAd2)$coefficients[1, 1], 2)
+            results$lm2_a_AvgDailyUnitSales_AvgPrice_NoAd_Sig           <- round(summary(lm2_PriceAd2)$coefficients[1, 4], 4)
+            results$lm2_b_AvgDailyUnitSales_PriceElasAdAdj              <- round(summary(lm2_PriceAd2)$coefficients[2, 1], 2) # !!! Replicates results from lm2_PriceAd !!!
+            results$lm2_b_AvgDailyUnitSales_PriceElasAdAdj_Sig          <- round(summary(lm2_PriceAd2)$coefficients[2, 4], 4)
+            results$lm2_c_AvgDailyUnitSales_AvgPrice_Ad                 <- NA
+            results$lm2_c_AvgDailyUnitSales_AvgPrice_AdLiftPrAdj        <- NA
+            results$lm2_c_AvgDailyUnitSales_AvgPrice_Ad_Sig             <- NA
+      }
       
       # If product was NOT featured in ad at least once then models couldn't be built and coefficients are NA
       } else {
       
-      results$PriceAdCorr                             <- NA
-      results$PriceAdCorrAdj                          <- NA
-      results$AvgWeeklyUnitPrice_NoAd                 <- NA
-      results$AvgWeeklyUnitPrice_NoAd_Sig             <- NA
-      results$AvgWeeklyUnitPrice_Ad                   <- NA
-      results$AvgWeeklyUnitPrice_Ad_Sig               <- NA
-                  
-      results$RSq_Ad                                  <- NA
-      results$AdjRSq_Ad                               <- NA
-      results$AvgDailyUnitSales_NoAd                  <- NA
-      results$AvgDailyUnitSales_NoAd_Sig              <- NA
-      results$AvgDailyUnitSales_Ad                    <- NA
-      results$AvgDailyUnitSales_AdLiftNotPrAdj        <- NA
-      results$AvgDailyUnitSales_Ad_Sig                <- NA
+      results$lm0_RSq_PriceAdCorr                                 <- NA
+      results$lm0_AdjRSq_PriceAdCorrAdj                           <- NA
+      results$lm0_a_AvgWeeklyUnitPrice_NoAd                       <- NA
+      results$lm0_a_AvgWeeklyUnitPrice_NoAd_Sig                   <- NA
+      results$lm0_b_AvgWeeklyUnitPrice_Ad                         <- NA
+      results$lm0_b_AvgWeeklyUnitPrice_Ad_Sig                     <- NA
             
-      results$RSq_PriceAd                             <- NA
-      results$AdjRSq_PriceAd                          <- NA
-      results$AvgDailyUnitSales_ZeroPrice_NoAd        <- NA
-      results$AvgDailyUnitSales_ZeroPrice_NoAd_Sig    <- NA
-      results$AvgDailyUnitSales_PriceElasAdAdj        <- NA
-      results$AvgDailyUnitSales_PriceElasAdAdj_Sig    <- NA
-      results$AvgDailyUnitSales_ZeroPrice_Ad          <- NA
-      results$AvgDailyUnitSales_ZeroPrice_AdLiftPrAdj <- NA
-      results$AvgDailyUnitSales_ZeroPrice_Ad_Sig      <- NA
+      results$lm1b_RSq_Ad                                         <- NA
+      results$lm1b_AdjRSq_Ad                                      <- NA
+      results$lm1b_a_AvgDailyUnitSales_NoAdNotPrAdj               <- NA
+      results$lm1b_a_AvgDailyUnitSales_NoAdNotPrAdj_Sig           <- NA
+      results$lm1b_b_AvgDailyUnitSales_AdNotPrAdj                 <- NA
+      results$lm1b_b_AvgDailyUnitSales_AdLiftNotPrAdj             <- NA
+      results$lm1b_b_AvgDailyUnitSales_AdNotPrAdj_Sig             <- NA
             
-      results$RSq_PriceAd2                            <- NA
-      results$AdjRSq_PriceAd2                         <- NA
-      results$AvgDailyUnitSales_AvgPrice_NoAd         <- NA
-      results$AvgDailyUnitSales_AvgPrice_NoAd_Sig     <- NA
-      results$AvgDailyUnitSales_PriceElasAdAdj        <- NA
-      results$AvgDailyUnitSales_PriceElasAdAdj_Sig    <- NA
-      results$AvgDailyUnitSales_AvgPrice_Ad           <- NA
-      results$AvgDailyUnitSales_AvgPrice_AdLiftPrAdj  <- NA
-      results$AvgDailyUnitSales_AvgPrice_Ad_Sig       <- NA
+      results$lm2_RSq_PriceAd                                     <- NA
+      results$lm2_AdjRSq_PriceAd                                  <- NA
+      results$lm2_a_AvgDailyUnitSales_ZeroPrice_NoAd              <- NA
+      results$lm2_a_AvgDailyUnitSales_ZeroPrice_NoAd_Sig          <- NA
+      results$lm2_b_AvgDailyUnitSales_PriceElasAdAdj              <- NA
+      results$lm2_b_AvgDailyUnitSales_PriceElasAdAdj_Sig          <- NA
+      results$lm2_c_AvgDailyUnitSales_ZeroPrice_Ad                <- NA
+      results$lm2_c_AvgDailyUnitSales_ZeroPrice_AdLiftPrAdj       <- NA
+      results$lm2_c_AvgDailyUnitSales_ZeroPrice_Ad_Sig            <- NA
             
-      }
+      results$lm2_RSq_PriceAd2                                    <- NA
+      results$lm2_AdjRSq_PriceAd2                                 <- NA
+      results$lm2_a_AvgDailyUnitSales_AvgPrice_NoAd               <- NA
+      results$lm2_a_AvgDailyUnitSales_AvgPrice_NoAd_Sig           <- NA
+      results$lm2_b_AvgDailyUnitSales_PriceElasAdAdj              <- NA
+      results$lm2_b_AvgDailyUnitSales_PriceElasAdAdj_Sig          <- NA
+      results$lm2_c_AvgDailyUnitSales_AvgPrice_Ad                 <- NA
+      results$lm2_c_AvgDailyUnitSales_AvgPrice_AdLiftPrAdj        <- NA
+      results$lm2_c_AvgDailyUnitSales_AvgPrice_Ad_Sig             <- NA
       
-      ## Diagnose models
-      #anova(lm_Base,
-      #      lm_Ad,
-      #      lm_Price,   lm_Price2,
-      #      lm_PriceAd, lm_PriceAd2)
+      }
       
       ProductList[[i]] <- results
       
-      ## Visualize models
+      ## 3e) Optimize Prices (Maximize Profits) by Applying Price Models for Movement Estimation #######################
       
-      setwd("/media/radmin/ExternalHD/Projects/Sales Data Analyses/3 PD/2 Marketing Mix Models (Results)/Plots")
-
-      plot_subtitle <- paste0(results$Product, " (UPC: ", results$UPC, ", Like Code: ", results$LikeCode, ") at Store ", SelectedStore,
-                              " (", SelectedWeeks_TotalAdWeeks, " Ad Weeks: ", SelectedWeeks_Begin, " thru ", SelectedWeeks_End, ")"
-                              #", \n Avg. Price $", round(results$AvgWeeklyUnitPrice, 2),
-                              #" (ON Sale $",       round(results$AvgWeeklyUnitPrice_Ad, 2),
-                              #" / NOT on Sale $",  round(results$AvgWeeklyUnitPrice_NoAd, 2), ")"
-                              )
-      plot_filename <- paste(results$LikeCode_UPC, results$UPC, results$Product, "at Store", SelectedStore, ".png")
+      ProfitFunction_lm1a_PriceNotAdAdj   <- function(AvgWeeklyUnitPrice) {
+            EstimatedDailyUnitSales       <- predict(lm1a_Price, newdata = data.frame(AvgWeeklyUnitPrice = AvgWeeklyUnitPrice))
+            # Estimated Daily Profit:
+            EstimatedDailyUnitSales*(AvgWeeklyUnitPrice-results$AvgWeeklyUnitCost)
+      }
       
-      # Draw plot 1) regardless of ad feature
-      plot1 <-
-      ggplot(data = data2,
-             aes(x = AvgWeeklyUnitPrice,
-                 y = AvgDailyUnitSales)) +
-            # Describe title and axes
-            ggtitle(bquote(atop(bold(.("Weekly Movement, Price Points, Ad Features")),
-                                atop(.(plot_subtitle)), ""))) +
-            labs(x        = "Unit Price (in USD, per week)",    
-                 y        = "Unit Sales (on avg. day per week)") +
-            # Draw points colored (regardless of ad feature)
-            geom_point(size = 5, alpha = .3) +
-            # Draw regression line (regardless of ad feature)
-            geom_smooth(    color = "black",    method = "lm", fullrange = T, size = .5, show.legend = F, se = F) +
-            # Add average price & unit sales (regardless of ad-feature)
-            geom_vline(xintercept = results$AvgWeeklyUnitPrice,      size = .5, alpha = .3, linetype = "dotted", color = "black") +
-            geom_hline(yintercept = results$AvgDailyUnitSales,       size = .5, alpha = .3, linetype = "dashed", color = "black") +
-            # Add axis tick marks according to data
-            scale_y_continuous(breaks = seq(    round(min(data2$AvgDailyUnitSales,  na.rm = T), 0),   round(max(data2$AvgDailyUnitSales,  na.rm = T), 0),
-                                            abs(round(min(data2$AvgDailyUnitSales,  na.rm = T), 0)-   round(max(data2$AvgDailyUnitSales,  na.rm = T), 0))/10),
-                               limits = c(            min(data2$AvgDailyUnitSales,  na.rm = T),             max(data2$AvgDailyUnitSales,  na.rm = T))) +
-            scale_x_continuous(breaks = seq(    round(min(data2$AvgWeeklyUnitPrice, na.rm = T), 0)-1, round(max(data2$AvgWeeklyUnitPrice, na.rm = T), 0)+1, 0.1),
-                               limits = c(            min(data2$AvgWeeklyUnitPrice, na.rm = T),             max(data2$AvgWeeklyUnitPrice, na.rm = T)))
+      if (results$TotalAdFeat_abs > 0) {
       
-      # Draw plot 2) by ad feature
-      # If was featured in ad at least once
-      if (results$TotalAdFeat_abs > 0) { 
+      ProfitFunction_lm2_PriceAdAdj_NoAd     <- function(AvgWeeklyUnitPrice) {
+            EstimatedDailyUnitSales <- predict(lm2_PriceAd, newdata = data.frame(AvgWeeklyUnitPrice = AvgWeeklyUnitPrice,
+                                                                                 AdFeature          = "NON-SALE"))
+            # Estimated Daily Profit:
+            EstimatedDailyUnitSales*(AvgWeeklyUnitPrice-results$AvgWeeklyUnitCost)
+      }
       
-      plot2 <- plot1 +
-            # Draw points colored by ad feature
-            geom_point( aes(color = AdFeature), size = 5, alpha = .3) +
-            # Position point-color legend on bottom
-            theme(legend.position = "bottom") +
-            scale_colour_manual(name   = "Ad Feature",
-                                labels = c("NOT on Sale", "ON Sale"),
-                                values = c("dodgerblue2", "firebrick3")) + 
-            # Draw regression line (by ad feature)
-            #geom_smooth(aes(group = AdFeature, color = AdFeature), method = "lm", fullrange = T, size = .5, show.legend = T, se = F, alpha = .1, linetype = "dotdash") +
-            # Add average price & unit sales (by ad-feature)
-            geom_vline(xintercept = results$AvgWeeklyUnitPrice_Ad,   size = .5, alpha = .5, linetype = "dotted", color = "firebrick3") +
-            geom_hline(yintercept = results$AvgDailyUnitSales_Ad,    size = .5, alpha = .5, linetype = "dashed", color = "firebrick3") +
-            geom_vline(xintercept = results$AvgWeeklyUnitPrice_NoAd, size = .5, alpha = .5, linetype = "dotted", color = "dodgerblue2") +
-            geom_hline(yintercept = results$AvgDailyUnitSales_NoAd,  size = .5, alpha = .5, linetype = "dashed", color = "dodgerblue2")
+      Optimum_lma1a_PriceNotAdAdj <- optimize(ProfitFunction_lm1a_PriceNotAdAdj, maximum = T,
+                                              lower = results$AvgWeeklyUnitCost,
+                                              upper = results$AvgWeeklyUnitPrice+(2*results$StdWeeklyUnitPriceDev)
+      )
       
-      ggsave(filename = paste0(plot_filename), plot = plot2, width = 25, units = "cm")
+      results$OptPrice_lma1a_PriceNotAdAdj      <- Optimum_lma1a_PriceNotAdAdj$maximum
+      results$MaxProfit_lma1a_PriceNotAdAdj     <- Optimum_lma1a_PriceNotAdAdj$objective
       
-      # Else draw 1st plot
+      Optimum_lm2_PriceAdAdj_NoAd <- optimize(ProfitFunction_lm2_PriceAdAdj_NoAd, maximum = T,
+                                              lower = results$AvgWeeklyUnitCost,
+                                              upper = results$AvgWeeklyUnitPrice+(2*results$StdWeeklyUnitPriceDev)
+      )
+      
+      results$OptPrice_lm2_PriceAdAdj_NoAd      <- Optimum_lm2_PriceAdAdj_NoAd$maximum
+      results$MaxProfit_lm2_PriceAdAdj_NoAd     <- Optimum_lm2_PriceAdAdj_NoAd$objective
+      
       } else {
-            
-      ggsave(filename = paste0(plot_filename), plot = plot1, width = 25, units = "cm")
+      
+      results$OptPrice_lm2_PriceAdAdj_NoAd      <- NA
+      results$MaxProfit_lm2_PriceAdAdj_NoAd     <- NA
             
       }
       
-      plot3 <- plot2 + stat_function(fun = (results$AvgDailyUnitSales_ZeroPrice + results$AvgDailyUnitSales_PriceElasNotAdAdj*AvgWeeklyUnitPrice)*(AvgWeeklyUnitPrice-AvgWeeklyUnitCost),
-                                     geom = "line")
+      ## 3f) Visualize Price Optimization & Profit Maximization ########################################################
+      
+      #plot_opt <- ggplot(data.frame(AvgWeeklyUnitPrice = c(results$AvgWeeklyUnitCost,
+      #                                                  results$AvgWeeklyUnitPrice+2*results$StdWeeklyUnitPriceDev)), 
+      #                aes(AvgWeeklyUnitPrice)) +
+      #      stat_function(fun = ProfitFunction_lm1a_PriceNotAdAdj,  geom = "line", color = "springgreen1") +
+      #      stat_function(fun = ProfitFunction_lm2_PriceAdAdj_NoAd, geom = "line", color = "springgreen4") +
+      #      labs(x        = "Unit Price (in USD, per week)",    
+      #           y        = "Estimated Unit Profit (in USD, on avg. day per week)") +
+      #      scale_x_continuous(breaks = seq(            results$AvgWeeklyUnitCost, results$AvgWeeklyUnitPrice+(2*results$StdWeeklyUnitPriceDev), 0.1),
+      #                         limits = c(              results$AvgWeeklyUnitCost, results$AvgWeeklyUnitPrice+(2*results$StdWeeklyUnitPriceDev))) +
+      #      # Add optimal prices & maximezed profits
+      #      geom_vline(xintercept = results$OptPrice_lma1a_PriceNotAdAdj,  size = .5, alpha = 1, linetype = "dotted", color = "springgreen1") +
+      #      geom_vline(xintercept = results$OptPrice_lm2_PriceAdAdj_NoAd,  size = .5, alpha = 1, linetype = "dotted", color = "springgreen4")  +
+      #      geom_hline(yintercept = results$MaxProfit_lma1a_PriceNotAdAdj, size = .5, alpha = 1, linetype = "dashed", color = "springgreen1") + 
+      #      geom_hline(yintercept = results$MaxProfit_lm2_PriceAdAdj_NoAd, size = .5, alpha = 1, linetype = "dashed", color = "springgreen4")
+      
+      ## 3g) Visualize models ##########################################################################################
+      
+      #setwd("/media/radmin/ExternalHD/Projects/Sales Data Analyses/3 PD/2 Marketing Mix Models (Results)/Plots")
+
+      #plot_subtitle <- paste0(results$Product, " (UPC: ", results$UPC, ", Like Code: ", results$LikeCode, ") at Store ", SelectedStore,
+      #                        " (", SelectedWeeks_TotalAdWeeks, " Ad Weeks: ", SelectedWeeks_Begin, " thru ", SelectedWeeks_End, ")"
+      #                        )
+      
+      #plot_filename <- paste(results$LikeCode_UPC, results$UPC, results$Product, "at Store", SelectedStore, ".png")
+      
+      # Draw plot 1) regardless of ad feature
+      #plot_reg1 <-
+      #ggplot(data = data2,
+      #       aes(x = AvgWeeklyUnitPrice,
+      #           y = AvgDailyUnitSales)) +
+      #      # Describe title and axes
+      #      ggtitle(bquote(atop(bold(.("Optimal, Profit-maximizing Price Based on Movement Estimation")),
+      #                          atop(.(plot_subtitle)), ""))) +
+      #      labs(x        = "Unit Price (in USD, per week)",    
+      #           y        = "Unit Sales (on avg. day per week)") +
+      #      # Draw points colored (regardless of ad feature)
+      #      geom_point(size = 5, alpha = .3) +
+      #      # Draw regression line (regardless of ad feature)
+      #      geom_smooth(    color = "black",    method = "lm", fullrange = T, size = .5, show.legend = F, se = F) +
+      #      # Add average price & unit sales (regardless of ad-feature)
+      #      geom_vline(xintercept = results$AvgWeeklyUnitCost,       size = .5, alpha = .3, linetype = "dotdash", color = "black") +
+      #      geom_vline(xintercept = results$AvgWeeklyUnitPrice,      size = .5, alpha = .3, linetype = "dotted",  color = "black") +
+      #      geom_hline(yintercept = results$AvgDailyUnitSales,       size = .5, alpha = .3, linetype = "dashed",  color = "black") +
+      #      # Add axis tick marks according to data
+      #      scale_y_continuous(breaks = seq(    round(min(data2$AvgDailyUnitSales,  na.rm = T), 0),   round(max(data2$AvgDailyUnitSales,  na.rm = T), 0),
+      #                                      abs(round(min(data2$AvgDailyUnitSales,  na.rm = T), 0)-   round(max(data2$AvgDailyUnitSales,  na.rm = T), 0))/10),
+      #                         limits = c(            min(data2$AvgDailyUnitSales,  na.rm = T),             max(data2$AvgDailyUnitSales,  na.rm = T))) +
+      #      scale_x_continuous(breaks = seq(            results$AvgWeeklyUnitCost, results$AvgWeeklyUnitPrice+(2*results$StdWeeklyUnitPriceDev), 0.1),
+      #                         limits = c(              results$AvgWeeklyUnitCost, results$AvgWeeklyUnitPrice+(2*results$StdWeeklyUnitPriceDev)))
+      
+      # Draw plot 2) by ad feature
+      # If was featured in ad at least once
+      #if (results$TotalAdFeat_abs > 0) { 
+      
+      #plot_reg2 <- plot_reg1 +
+      #      # Draw points colored by ad feature
+      #      geom_point( aes(color = AdFeature), size = 5, alpha = .3) +
+      #      # Position point-color legend on bottom
+      #      theme(legend.position = "top") +
+      #      scale_colour_manual(name   = "Ad Feature",
+      #                          labels = c("NOT on Sale", "ON Sale"),
+      #                          values = c("dodgerblue2", "firebrick3")) + 
+      #      # Draw regression line (by ad feature)
+      #      geom_smooth(aes(group = AdFeature, color = AdFeature), method = "lm", fullrange = T, size = .5, show.legend = T, se = F, alpha = .1, linetype = "dotdash") +
+      #      # Add average price & unit sales (by ad-feature)
+      #      geom_vline(xintercept = results$lm0_a_AvgWeeklyUnitPrice_NoAd,          size = .5, alpha = .5, linetype = "dotted", color = "dodgerblue2") +
+      #      geom_vline(xintercept = results$lm0_b_AvgWeeklyUnitPrice_Ad,            size = .5, alpha = .5, linetype = "dotted", color = "firebrick3")  +
+      #      geom_hline(yintercept = results$lm1b_a_AvgDailyUnitSales_NoAdNotPrAdj,  size = .5, alpha = .5, linetype = "dashed", color = "dodgerblue2") + 
+      #      geom_hline(yintercept = results$lm1b_b_AvgDailyUnitSales_AdNotPrAdj,    size = .5, alpha = .5, linetype = "dashed", color = "firebrick3")
             
+      #grid.newpage()
+      #plot2 <- grid.draw(rbind(ggplotGrob(plot_reg2), ggplotGrob(plot_opt), size = "last"))
+      
+      #ggsave(filename = paste0(plot_filename), plot = plot2, width = 25, units = "cm")
+      
+      # Else draw 1st plot
+      #} else {
+      
+      #grid.newpage()
+      #plot1 <- grid.draw(rbind(ggplotGrob(plot_reg1), ggplotGrob(plot_opt), size = "last"))
+                        
+      #ggsave(filename = paste0(plot_filename), plot = plot1, width = 25, units = "cm")
+            
+      #}
       
       # Remove models so that they don't skew the models for the enxt product in the loop
-      rm(lm_Price2, lm_Price, lm_Price0, lm_Base, lm_Ad, lm_PriceAd, lm_PriceAd0, lm_PriceAd2)
+      rm(#plot_reg1, plot_reg2, plot1, plot2, plot_opt,
+         lm1a_Price2, lm1a_Price, lm0_Price, lm0_Base, lm1b_Ad, lm2_PriceAd, lm0_PriceAd, lm2_PriceAd2
+         )
 }
 
 results <- ldply(ProductList, data.frame)
@@ -444,150 +545,11 @@ StoreList[[j]] <- data1_UPC_MostSold
 
 } # Close store-loop
 
-Results_MostSoldProducts <- ldply(StoreList, data.frame)
-
-## 3b) Response in UNIT Sales by Price x Ad-Feature (ADJUSTED) of Top 80% Most Featured Products #############################
-
-# Select products that regression runs over
-          SelectedMostFeatProducts  <- data1_UPC_MostFeat$UPC[1:10]
-       ResultList_MostFeatProducts  <- list()
-length(ResultList_MostFeatProducts) <- length(SelectedMostFeatProducts)
-
-for (i in 1:length(SelectedMostFeatProducts)) {
-      
-      # Run regression computationally per item
-      
-      # Loop through each UPC in each store
-      data2 <- ungroup(data0) %>% 
-            filter(UPC    ==   SelectedMostFeatProducts[1],
-                   Store  ==   SelectedStore,
-                   WeekNo %in% SelectedWeeks) %>%
-            # Centering price by UPC, per store and in time frame (Make intercept more interpretable; otherwise, intercept would have been at 0 USD)
-            mutate(AvgWeeklyUnitPrice_centered = scale(AvgWeeklyUnitPrice, center = T, scale = F))
-      
-      # Create table where results are going to be stored
-      results <- as.data.frame(matrix(nrow = 1)) %>% 
-            rename(UPC = V1) %>% 
-            mutate(UPC = SelectedMostFeatProducts[i]
-      
-      
-      
-      
-      
-      
-      results$RSq                   <- round(summary(lm_PriceAd)$r.squared,          3)
-      results$RSqAdj                <- round(summary(lm_PriceAd)$adj.r.squared,      3)
-      results$Beta0                 <- round(summary(lm_PriceAd)$coefficients[1, 1], 2)
-      results$Sign0                 <- round(summary(lm_PriceAd)$coefficients[1, 4], 3)
-      
-      # If price does not change (std. dev. is 0), then no price elasticity can be estimated
-      if(sd(data2$AvgWeeklyUnitPrice)[1] == 0) {
-            
-            results$Beta1 <- NA
-            results$Sign1 <- NA
-            
-      } else {
-            
-            results$Beta1           <- round(summary(lm_PriceAd)$coefficients[2, 1], 2)
-            results$Sign1           <- round(summary(lm_PriceAd)$coefficients[2, 4], 3)
-            
-      }
-      
-      results$Beta2                 <- round(summary(lm_PriceAd)$coefficients[3, 1], 2)
-      results$Sign2                 <- round(summary(lm_PriceAd)$coefficients[3, 4], 3)
-      
-      ResultList_MostFeatProducts[[i]] <- results
-}
-
-results <- ldply(ResultList_MostFeatProducts, data.frame)
-
-data1_UPC_MostSold      <- left_join(data1_UPC_MostSold,
-                                     results, by = "UPC") %>% 
-      mutate(AvgWeeklyUnitPriceChange = round(StdWeeklyUnitPriceDev/AvgWeeklyUnitPrice*100, 2),
-             PriceElast               = round((Beta1/AvgDailyUnitSales)/     # Percent change in quantity demanded (dollar sales) divided by
-                                                    (1/    AvgWeeklyUnitPrice), 2) # Percent change in price
-      ) %>% 
-      filter(!is.na(RSq))
-
-StoreList[[j]] <- data1_UPC_MostSold
-
-} # Close store-loop
-
-Results_MostSoldProducts <- ldply(StoreList, data.frame)
-
-# Select products that regression runs over
-SelectedMostFeatProducts      <- data1_UPC_MostFeat$UPC[1:10]
-# Save Results in list that will eventually be collapsed into dataframe
-       ResultList_MostFeat          <- list()
-length(ResultList_MostFeat)         <- length(SelectedMostFeatProducts)
-
-for (i in 1:length(SelectedMostFeatProducts)) {
-            
-      # Loop through each UPC in each store
-            data2a <- ungroup(data0_LC) %>%
-                  filter(LikeCode_UPC ==   SelectedMostFeatProducts[i],
-                         Store        ==   SelectedStore,
-                         WeekNo       %in% SelectedWeeks) %>%
-                  # Make intercept more interpretable by centering AvgPrice; otherwise, intercept would have been at 0 USD
-                  mutate(AvgWeeklyUnitPrice_centered = scale(AvgWeeklyUnitPrice, center = T, scale = F))
-            
-            # Summarize Results
-            data3_byAdFeat    <- group_by(data2a,
-                                           Store, LikeCode_UPC, AdFeature) %>% 
-                  summarize(WeekCount           = n(),
-                            AvgPrice            = round(mean(AvgWeeklyUnitPrice,      na.rm = T), 2),
-                            StDPrice            = round(sd(AvgWeeklyUnitPrice,        na.rm = T), 2),
-                            #TotalWeeklyDollarSales   = round(mean(TotalWeeklyDollarSales,   na.rm = T), 0),
-                            #TotalWeeklyUnitSales     = round(mean(TotalWeeklyUnitSales,     na.rm = T), 0),
-                            AvgDailyDollarSales = round(mean(AvgDailyDollarSales, na.rm = T), 0),
-                            AvgDailyUnitSales   = round(mean(AvgDailyUnitSales,   na.rm = T), 0))  %>% 
-                  left_join(Products_LC, by = "LikeCode_UPC")
-            
-            data3             <- group_by(data2a,
-                                           Store, LikeCode_UPC) %>%
-                  summarize(WeekCount           = n(),
-                            AvgPrice            = round(mean(AvgWeeklyUnitPrice,      na.rm = T), 2),
-                            StDPrice            = round(sd(AvgWeeklyUnitPrice,        na.rm = T), 2),
-                            ChgPrice            = round(StDPrice/AvgPrice*100               , 2),
-                            #TotalWeeklyDollarSales   = round(mean(TotalWeeklyDollarSales,   na.rm = T), 0),
-                            #TotalWeeklyUnitSales     = round(mean(TotalWeeklyUnitSales,     na.rm = T), 0),
-                            AvgDailyDollarSales = round(mean(AvgDailyDollarSales, na.rm = T), 0),
-                            AvgDailyUnitSales   = round(mean(AvgDailyUnitSales,   na.rm = T), 0)) %>% 
-                  left_join(Products_LC, by = "LikeCode_UPC")
-            
-            lm_PriceAd <- lm(data = data2a, AvgDailyDollarSales ~ AvgWeeklyUnitPrice_centered + AdFeature)
-            
-            data3$RSq        <- round(summary(lm_PriceAd)$r.squared,          3)
-            data3$Beta0      <- round(summary(lm_PriceAd)$coefficients[1, 1], 0)
-            data3$Sign0      <- round(summary(lm_PriceAd)$coefficients[1, 4], 3)
-            data3$Beta1      <- round(summary(lm_PriceAd)$coefficients[2, 1], 2)
-            data3$Sign1      <- round(summary(lm_PriceAd)$coefficients[2, 4], 3)
-            data3$Beta2      <- round(summary(lm_PriceAd)$coefficients[3, 1], 2)
-            data3$Sign2      <- round(summary(lm_PriceAd)$coefficients[3, 4], 3)
-            data3$PriceElast <- round((data3$Beta1/data3$Beta0)/ # Percent change in quantity demanded (dollar sales) divided by
-                                       (1/    data3$AvgPrice),     # Percent change in price
-                                       2)
-            data3$AdImpact   <- round((data3$Beta2/data3$Beta0)*100, 2)        # Lift in sales when featured in ad divided by average sales without the ad
-      
-      ResultList_MostFeat[[i]] <- data3 
-      
-}
-
-Results_MostFeat <- ldply(ResultList_MostFeat, data.frame)
-
-#resid(fit)
-#summary(fit)$sigma # Finding residual variance estimates.
-#sqrt(sum(resid(fit)^2) / (n - 2)) # Directly calculating from the residuals
-
-## 4) Plot regression model ############################################################################################
+results <- ldply(StoreList, data.frame)
 
 
-
-
-
-# Residual plot
 
 ## 5) Export results ####################################################################
 
 setwd("/media/radmin/ExternalHD/Projects/Sales Data Analyses/3 PD/2 Marketing Mix Models (Results)")
-write.csv(Results_MostSoldProducts, paste0("Most Sold Products_", SelectedWeeks_Begin, " - ", SelectedWeeks_End, " (", SelectedWeeks_TotalAdWeeks,  " Ad Weeks).csv"), row.names = F)
+write.csv(results, paste0((SelectedSDept), "Products_", SelectedWeeks_Begin, " - ", SelectedWeeks_End, " (", SelectedWeeks_TotalAdWeeks,  " Ad Weeks).csv"), row.names = F)
