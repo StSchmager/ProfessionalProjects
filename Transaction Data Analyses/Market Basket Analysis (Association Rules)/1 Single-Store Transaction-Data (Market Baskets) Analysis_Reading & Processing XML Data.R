@@ -96,7 +96,7 @@ ggplot(FileIndex, aes(Date)) +
 
 ## STORE
 
-store <- "3"
+store <- "4"
 
 ## DATES
 
@@ -106,8 +106,8 @@ date_begin  <- date_end-6
 
 
 # b) Manual DATE range
-date_begin  <- as.Date("2015-08-01")
-date_end    <- as.Date("2016-07-31")
+date_begin  <- as.Date("2015-09-09")
+date_end    <- as.Date("2016-09-06")
 
 # c) Populate date range completely and fill in dates between start and end date
 date_range  <- seq.Date(from = date_begin,

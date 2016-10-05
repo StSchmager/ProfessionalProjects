@@ -121,8 +121,8 @@ WeekEndDate       <- max(FileIndex$Date)
 WeekStartDate     <- WeekEndDate-6
 
 # Determine most recent week/s MANUALLY
-WeekEndDate       <- as.Date("2016-08-16")
-WeekStartDate     <- as.Date("2016-08-10")
+WeekEndDate       <- as.Date("2016-09-27")
+WeekStartDate     <- as.Date("2016-09-21")
 
 # Check if available data dates comprise 52 weeks
 FirstDate         <- min(FileIndex$Date)
@@ -164,6 +164,10 @@ ggplot(FileIndex_MostRecentWeek, aes(Date)) +
 #                              by   = 1)
 ####
 
+# +++++ Processing Timer +++++ 
+timer_begin <- Sys.time()
+# ++++++++++++++++++++++++++++
+
 # 1st Loop through store folders
 for (j in 1:length(Stores)) {
       
@@ -181,6 +185,8 @@ for (i in 1:length(files_selected)) {
       setwd(filefolder)
       tree <- xmlInternalTreeParse(files_selected[i], getDTD = F)
       # May experiment with xmlInternalTreeParse(), xmlTreeParse() or xmlEventParse() for more processing speed
+      
+      print(paste(files_selected[i], "XML file (no. ",i ,") to be processed"))
       
       # If at least one transaction type (F1068) "SALE" is contained in the XML file, continue and...
       if ("SALE" %in% xpathSApply(tree, "//*[@F1068]", xmlGetAttr, "F1068", default = NA)) {
@@ -289,6 +295,15 @@ for (i in 1:length(files_selected)) {
       ##  Write each XML-file dataframe into the list element 
       FileList[[i]]     <- data
       
+      # +++++ Processing Timer & Status ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      timer_split       <- Sys.time()
+      progress_time     <- difftime(timer_split, timer_begin, units = c("mins"))
+      progress_perc     <- i/length(files_selected)
+      timer_end         <- timer_begin + (progress_time/progress_perc)
+      print(paste(files_selected[i], "XML file (no. ",i ,") successfully processed........................", round(progress_perc*100, 2), "%"))
+      print(paste(round(progress_time, 1), "minutes since processing started. Expected to be completed.......", timer_end))
+      # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      
 } # Ends 2nd XML-file loop
 
 # Collapse dataframes of the list into one dataframe
@@ -308,24 +323,27 @@ rm(filefolder, tree, i,
 # 3) Read and process CSV customer data ################################################################################
 # Retrieve account numbers of customers and their self-entered home ZIP codes from customer CSV file
 
-setwd("~/Projects/Transaction Data Analyses/1 RD/CSV Customer File")
-Customers <- read.csv(list.files(), colClasses = "character", na.strings = c("")) %>%
-      select(         CardNumber,           PostalCode) %>%
-      rename(CustNo = CardNumber,       # Customer number
-             ZIPCust = PostalCode) %>%  # Customer ZIP code
-      # Correct typos in customer ZIP codes by replacing letters "o/O" with digit "0"
-      mutate(ZIPCust = gsub("o", "0", ZIPCust, ignore.case = T)) %>% 
-      # Clean ZIP codes and convert invalid entries to NAs
-      mutate(ZIPCust = clean.zipcodes(ZIPCust))
+#setwd("~/Projects/Transaction Data Analyses/1 RD/CSV Customer File")
+#Customers <- read.csv(list.files(), colClasses = "character", na.strings = c("")) %>%
+#      select(         CardNumber,           PostalCode) %>%
+#      rename(CustNo = CardNumber,       # Customer number
+#             ZIPCust = PostalCode) %>%  # Customer ZIP code
+#      # Correct typos in customer ZIP codes by replacing letters "o/O" with digit "0"
+#      mutate(ZIPCust = gsub("o", "0", ZIPCust, ignore.case = T)) %>% 
+#      # Clean ZIP codes and convert invalid entries to NAs
+#      mutate(ZIPCust = clean.zipcodes(ZIPCust))
 
 # 4) Join ZIP codes from customer data with transaction data ###########################################################
 
 # Clean ZIP codes by erasing non-ZIP-code-format entries and non-existing ones; Customer ZIP codes were already cleaned in 3)
 Trans$ZIPCash <- clean.zipcodes(Trans$ZIPCash)
 
-Trans <- left_join(Trans, Customers, by = c("CustNo")) %>%
+Trans <- #left_join(Trans, Customers, by = c("CustNo")) %>%
       # Compare ZIP codes from cashiers and customers: TRUE if both match; FALSE if they don't; NA if one of the two is NA
-      mutate(ZIPComp = ZIPCash == ZIPCust)
+      #mutate(ZIPComp = ZIPCash == ZIPCust)
+      mutate(Trans,
+             ZIPCust = NA,
+             ZIPComp = NA)
 
 # If available, take ZIP-code entered by customer; else, ...
 Trans$ZIP                           <- as.character(Trans$ZIPCust)
@@ -369,8 +387,9 @@ Trans <- filter(Trans, !duplicated(Trans)) %>%
       filter(TotalSales > 0)
 
 # Define time variables separately since dplyr::mutate doesn't support POSIXlt
-Trans$SDateTime   <- strptime(paste(Trans$Date, Trans$STime), format = "%Y-%m-%d %H:%M:%S")
-Trans$EDateTime   <- strptime(paste(Trans$Date, Trans$ETime), format = "%Y-%m-%d %H:%M:%S")
+Trans$SDateTime         <- strptime(paste(Trans$Date, Trans$STime), format = "%Y-%m-%d %H:%M:%S")
+Trans$EDateTime         <- strptime(paste(Trans$Date, Trans$ETime), format = "%Y-%m-%d %H:%M:%S")
+Trans$TransDuration     <- as.integer(Trans$EDateTime-Trans$SDateTime)
 
 # Group dates to Wed-Tue sales weeks
 # (Trick cut.Date function with the help of dummy variable that just groups Mon-Sun or Sun-Sat weeks)
@@ -397,6 +416,7 @@ Trans <- subset(Trans, !duplicated(Date), Date) %>%
              ETime,
              SDateTime,
              EDateTime,
+             TransDuration,
              CashNo,
              CashName,
              CustNo,
@@ -417,20 +437,20 @@ Trans <- subset(Trans, !duplicated(Date), Date) %>%
 
 setwd("~/Projects/Transaction Data Analyses/3 PD/1 ZIP-Code Analysis")
 Trans_Past  <- read.csv("Daily Transactions_All Stores_Recent Weeks (ZIP Codes).csv") %>% 
-      mutate(ID         = factor(ID),
-             StoreNo    = factor(StoreNo),
-             Date       = as.Date(Date),
-             Week       = factor(Week),
-             CashNo     = factor(CashNo),
-            #CashName   = CashName,
-             ZIPCash    = factor(ZIPCash), 
-            #IsZIPCash  = IsZIPCash,
-             ZIPCust    = factor(ZIPCust),
-            #IsZIPCust  = IsZIPCust,
-             ZIP        = factor(ZIP),
-            #IsZIP      = factor(IsZIP),
-            #ZIPComp    = ZIPComp,
-             TotalSales = as.numeric(TotalSales))
+      mutate(ID            = factor(ID),
+             StoreNo       = factor(StoreNo),
+             Date          = as.Date(Date),
+             Week          = factor(Week),
+             CashNo        = factor(CashNo),
+            #CashName      = CashName,
+             ZIPCash       = factor(ZIPCash), 
+            #IsZIPCash     = IsZIPCash,
+             ZIPCust       = factor(ZIPCust),
+            #IsZIPCust     = IsZIPCust,
+             ZIP           = factor(ZIP),
+            #IsZIP         = factor(IsZIP),
+            #ZIPComp       = ZIPComp,
+             TotalSales    = as.numeric(TotalSales))
 
 # 7) Read and process CSV ad-distribution data #########################################################################
 # Contains household counts per store per ZIP code that ad is distributed to weekly
@@ -456,12 +476,13 @@ setwd("~/Projects/Transaction Data Analyses/3 PD/1 ZIP-Code Analysis")
 Trans <-
 select(Trans, ID,
        StoreNo, Date, Week,
+       STime, ETime,
        CashNo, CashName,
        ZIPCash, IsZIPCash,
        ZIPCust, IsZIPCust,
        ZIP,     IsZIP,
        ZIPComp,
-       TotalSales) %>% 
+       TotalSales, TransDuration) %>% 
       rbind(Trans_Past) %>% 
       unique() #%>% 
 

@@ -16,7 +16,7 @@ options(scipen=999)
 # Disable default string-to-factor conversion
 options(stringsAsFactors = FALSE)
 
-Week        <- "2016-08-24"
+Week        <- "2016-08-31"
 Stores      <- c("5", "7")
 
 # 1) DATA IMPORT: SUB-DEPT. List w/ main departments ###################################################################
