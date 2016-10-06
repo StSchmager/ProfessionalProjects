@@ -122,8 +122,21 @@ The data described is visualized from different perspectives in Tableau dashboar
 
 #### 1.3.b Marketing-Mix-Model Dataset
 
-This data set essentially contains information at the level of individual items (SKUs) at _UPC_-level and their _Week_- and _Store_-specific _Unit Sales_, _Average Price_, and consequently _Dollar Sales_.
-Further, the dataset contains item-specific filter variables like _Category, Sub- and Main-Department_, as well as price-specific filter variables; that is _Price Type_ (SALES or NON-SALES price) and _Price Label_ (Price per Price Quantity, e.g. 4/$1).
+Essentially, this data set contains information at the level of individual items (SKUs at _UPC_-level) and their _weekly_ and _store_-specific price, movement, sales, and profitability data. All in all, the dataset contains these variables:
+
+* __Week__ 
+* __Store__ 
+* __UPC__ 
+* __Product Description__ 
+* __Department__
+* __Sub-Department__
+* __Like Code__
+* __Weekly Unit Price__
+* __Price Type__
+* __Ad Price Label__
+* __Unit Sales__
+* __Dollar Sales__
+* __Weekly Unit Cost__
 
 The data described is used as data input in the following data-analysis script.
 
